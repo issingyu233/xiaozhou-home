@@ -1,215 +1,69 @@
 <!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="UTF-8">
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>小昼的家 · 原型</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft YaHei',sans-serif;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;}
-  body{display:flex;align-items:center;justify-content:center;background:#c9b39a;overflow:hidden;}
-  img{image-rendering:pixelated;-webkit-user-drag:none;}
-  #app{position:relative;width:min(400px,100vw);height:100vh;max-height:780px;overflow:hidden;background:#caa06a;}
-  /* 房间 */
-  #room{position:absolute;inset:0;z-index:0;}
-  #wall{position:absolute;left:0;right:0;top:0;height:26%;z-index:0;
-    background:repeating-linear-gradient(180deg,#d9b27a 0 17px,#cda468 17px 19px);}
-  #wallbase{position:absolute;left:0;right:0;top:26%;height:6px;background:#8a5c38;z-index:0;}
-  #floor{position:absolute;left:0;right:0;top:calc(26% + 6px);bottom:0;z-index:0;image-rendering:pixelated;}
-  #grid{position:absolute;inset:0;z-index:3;display:none;pointer-events:none;
-    background-image:linear-gradient(rgba(255,255,255,.25) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.25) 1px,transparent 1px);}
-  .furn{position:absolute;z-index:4;touch-action:none;}
-  .furn img{width:100%;height:100%;}
-  .furn.sel{outline:2px dashed #fff;outline-offset:2px;filter:drop-shadow(0 0 4px #fff);}
-  #pet{position:absolute;z-index:6;width:96px;left:50%;bottom:14%;transform:translateX(-50%);cursor:pointer;}
-  #say{position:absolute;z-index:8;left:50%;transform:translateX(-50%);background:rgba(255,248,234,.96);border:3px solid #4a3226;border-radius:12px;padding:6px 13px;font-size:13px;color:#5a3a26;white-space:nowrap;box-shadow:2px 2px 0 rgba(74,50,38,.3);opacity:0;transition:opacity .25s;}
-  #say::after{content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-top-color:#4a3226;border-bottom:0;}
-  /* ===== UI：分离小件 ===== */
-  .wood{background:rgba(232,207,160,.9);border:2px solid #4a3226;box-shadow:1px 2px 0 rgba(74,50,38,.3);border-radius:10px;}
-  .woodbtn{background:linear-gradient(180deg,#c79a5e,#b3814f);border:2px solid #4a3226;box-shadow:0 3px 0 #7a5330;border-radius:12px;color:#fff;text-shadow:0 1px 0 #7a5330;}
-  .woodbtn:active{transform:translateY(2px);box-shadow:0 1px 0 #7a5330;}
-  /* 顶部：需求条（分离小卡）+ 币 */
-  #needs{position:absolute;top:10px;left:10px;z-index:10;display:flex;gap:5px;}
-  .need{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 3px 3px;width:38px;}
-  .need .n{font-size:9px;color:#5a3a26;}
-  .need .bar{width:30px;height:6px;border:1.5px solid #4a3226;border-radius:4px;overflow:hidden;background:#e6d3a8;}
-  .need .bar i{display:block;height:100%;}
-  #topr{position:absolute;top:10px;right:10px;z-index:10;display:flex;gap:5px;align-items:center;}
-  .coin{display:flex;align-items:center;gap:3px;padding:4px 9px 4px 5px;font-size:11px;color:#5a3a26;font-weight:bold;}
-  .coin .c{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ffe79a,#e0a83a);border:2px solid #8a5a1a;}
-  /* 右侧：装修/换地板/完成（分离圆钮） */
-  #tools{position:absolute;right:10px;top:78px;z-index:10;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
-  .tbtn{width:44px;height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;font-weight:bold;}
-  .tbtn .i{font-size:16px;line-height:1;}
-  /* 底部：照顾（分离圆钮，不占整条） */
-  #care{position:absolute;left:0;right:0;bottom:14px;z-index:10;display:flex;justify-content:center;gap:14px;}
-  .cbtn{width:56px;height:56px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:10px;}
-  .cbtn .i{font-size:20px;line-height:1;}
-  /* 装修托盘 */
-  #tray{position:absolute;left:8px;right:8px;bottom:12px;z-index:11;display:none;gap:8px;padding:8px;overflow-x:auto;}
-  #tray .item{flex:0 0 auto;width:58px;height:58px;display:flex;align-items:center;justify-content:center;padding:4px;}
-  #tray .item img{max-width:100%;max-height:100%;}
-  #editbar{position:absolute;left:0;right:0;bottom:78px;z-index:11;display:none;justify-content:center;gap:10px;}
-  .hint{position:absolute;top:66px;left:50%;transform:translateX(-50%);z-index:11;font-size:11px;color:#5a3a26;padding:3px 12px;display:none;}
-</style></head>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>夏以昼喂养模拟器</title>
+<link rel="stylesheet" href="style.css">
+</head>
 <body>
 <div id="app">
+  <!-- ===== 房间 ===== -->
   <div id="room">
-    <div id="wall"></div><div id="wallbase"></div>
+    <div id="wall"></div>
+    <!-- 窗户 + 窗帘 -->
+    <div id="window">
+      <div class="sky"></div>
+      <div class="cloud c1"></div>
+      <div class="cloud c2"></div>
+      <div class="pane v"></div>
+      <div class="pane h"></div>
+      <div class="sill"></div>
+    </div>
+    <div class="curtain l"></div>
+    <div class="curtain r"></div>
+    <div id="wallbase"></div>
+    <!-- 地板 -->
     <div id="floor"></div>
+    <div id="rug"></div>
     <div id="grid"></div>
-    <!-- furniture 动态插入 -->
-    <img id="pet" src="data:image/png;base64,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">
+    <!-- 家具动态插入 -->
+    <img id="pet" src="xiaozhu.png" alt="小昼">
     <div id="say"></div>
   </div>
 
+  <!-- ===== 顶部：需求 + 金币 ===== -->
   <div id="needs">
-    <div class="need wood"><span class="n">心情</span><div class="bar"><i data-need="mood"></i></div></div>
-    <div class="need wood"><span class="n">饱食</span><div class="bar"><i data-need="food"></i></div></div>
-    <div class="need wood"><span class="n">清洁</span><div class="bar"><i data-need="clean"></i></div></div>
-    <div class="need wood"><span class="n">精力</span><div class="bar"><i data-need="energy"></i></div></div>
+    <div class="need panel"><span class="ico" data-ico="mood"></span><div class="bar"><i data-need="mood"></i></div></div>
+    <div class="need panel"><span class="ico" data-ico="food"></span><div class="bar"><i data-need="food"></i></div></div>
+    <div class="need panel"><span class="ico" data-ico="clean"></span><div class="bar"><i data-need="clean"></i></div></div>
+    <div class="need panel"><span class="ico" data-ico="energy"></span><div class="bar"><i data-need="energy"></i></div></div>
   </div>
-  <div id="topr"><div class="coin wood"><span class="c"></span><span id="coinN">120</span></div></div>
+  <div id="topr">
+    <div class="coin panel"><span class="ico" data-ico="coin"></span><span id="coinN">120</span></div>
+  </div>
 
+  <!-- ===== 右侧工具 ===== -->
   <div id="tools">
-    <div class="tbtn woodbtn" id="btnEdit"><span class="i">🔨</span>装修</div>
+    <button class="tbtn panel" id="btnEdit"><span class="ico" data-ico="hammer"></span><span class="lbl">装修</span></button>
   </div>
-  <div class="hint" id="hint">装修中 · 拖动家具摆放 · 点家具可收回</div>
+  <div class="hint panel" id="hint">装修中 · 拖动家具摆放 · 双击家具收回</div>
   <div id="editbar">
-    <div class="tbtn woodbtn" id="btnFloor"><span class="i">🧱</span>换地板</div>
-    <div class="tbtn woodbtn" id="btnDone"><span class="i">✔</span>完成</div>
+    <button class="tbtn panel" id="btnFloor"><span class="ico" data-ico="brush"></span><span class="lbl">换地板</span></button>
+    <button class="tbtn panel" id="btnDone"><span class="ico" data-ico="check"></span><span class="lbl">完成</span></button>
   </div>
-  <div id="tray" class="wood"></div>
+  <div id="tray" class="panel"></div>
 
+  <!-- ===== 底部照料 ===== -->
   <div id="care">
-    <div class="cbtn woodbtn" data-care="pet"><span class="i">🐾</span>摸摸</div>
-    <div class="cbtn woodbtn" data-care="food"><span class="i">🍎</span>喂食</div>
-    <div class="cbtn woodbtn" data-care="clean"><span class="i">🛁</span>洗澡</div>
-    <div class="cbtn woodbtn" data-care="energy"><span class="i">🌙</span>哄睡</div>
+    <button class="cbtn panel" data-care="pet"><span class="ico" data-ico="paw"></span><span class="lbl">摸摸</span></button>
+    <button class="cbtn panel" data-care="food"><span class="ico" data-ico="apple"></span><span class="lbl">喂食</span></button>
+    <button class="cbtn panel" data-care="clean"><span class="ico" data-ico="drop"></span><span class="lbl">洗澡</span></button>
+    <button class="cbtn panel" data-care="energy"><span class="ico" data-ico="moon"></span><span class="lbl">哄睡</span></button>
   </div>
 </div>
-
-<script>
-const CELL=44;
-const FLOORS=['data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAV0lEQVR4nGM8XO/znwELeProPZwtLSeITQkDAwMDAxNOGSIBy9s33+GcH99+YFWE7BoOLg7quoByL0jL8yNx+XEqpJkLRg1gYGD58fXXwLqAunlhQFwAAEUrFEqIRiriAAAAAElFTkSuQmCC','data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGN8dXrzfwYKABMlmqliAAsy5+WVq3C2uI42fVxAXS/gcvb3N6/hbE4RUeq6gLpewAXQnU1VF4waQAUDAGQhCi14vDrvAAAAAElFTkSuQmCC'];
-// 家具目录：id,图,占格宽高(近似显示尺寸)
-const CATALOG=[
-  {id:'bed',    img:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC4AAAAYCAYAAACFms+HAAACMklEQVR4nNWWMUhbQRjHf4arkGBD2sSXIA0V2q1ph04qiotTQByyuHRooS7SrYPQzq3tWgqlix0LxUGkUHASBB0EIUYQtFCwlJi8QIniAzO8DuauL/feU9u+JK//6fLd5fG7/3333dcze2/AxqG3xR89/AeKAOSyCXLZRJdR/kyiZlrwD9Az48MtJ/Z+db0jJyYASgc/VWB7Yd4GuPtw7kKAmfFh+9ncYz1sJ4zrwRECrz99drEIgHSsF4DDk1MA0rk7bC/M2xJed9WpaKrfFZt9VAgE2CEbWjcgzlstgV+9e+maaxwf8fzpCwCu9F1VMfDezN/IMqvAmRH1cgXAlvC+4DeGhnjSHH/f2FAxXRJaHwch3YAH+TFowgv4nSK64hlDfeCwtEPj+ChwuMtKbkLCR5KpKOlYr8pzrz90C/Y8CYD+ZAzwdz4scqZOxG+RvGhhVaRmWuqHHMvbHGYJgGrtxHNSHo103zKrocl3V6q8+bBEvVwJveu+OQ7hThmRTEVVNUmmojSaE/VyhXjGCC28AFRL62y2APnMKnk95c5HqZOVyJUqg7eyrJX2W2LxjEE8Y/hezG6UTldbCzCau81aaZ/8xMilX85Ow3u2tQCF6SkWPy4BkJ8YAYLr+oKQb3domVUK01MAagN+6+SG5EVux4XWTXOBf/t6wDIwOXZfVRbpuK6tzZ22geqSBsmC4em4Dh8WOQ1qAa+ZFpi7ABT3dil+WQHO6runrt1sE+LF+gVQt9JUGO/bFwAAAABJRU5ErkJggg==', w:128,h:96},
-  {id:'wardrobe',img:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC4AAAAiCAYAAAAge+tMAAABJElEQVR4nO2YsQqDMBRFrxJKFTpIKZk6lS5d/IZ8ud/g4lI6dZJSHAqlmx1KaCKoz0StoTmbISdcQvJeMBBRVIMAT9aUadaU1Ys0jwGASDkAYLeNp0s0Arf7EwCQ5SVCObj00ICeMWwOLB2ZNeyZt1h88LnxweeGAd/6uPTqInMCQEDtnFTaOiy1I1IJRBTVsnO6QpaXn6MiP4YiUm7k2bhyk5k6eNhvyAtcrg8jz8ZVPWerig8+N84G1y6neviHYOrZuFrw0zEhi8W5MvJsXNVz9qj44HPjbHDtcvJ4RRYLQ8/GVT0tuOl73OYdb+r+57O2DbkRY67ZXNv4WdtGsxMObU5d+Ab0S1j/FDuGlsouWsvhFEz1y2PS4CLl2r+QMdaTvAFewFXqu0IrDgAAAABJRU5ErkJggg==',w:96, h:100},
-  {id:'table',  img:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAkCAYAAACe0YppAAAA3ElEQVR4nO3WMQqDMBQG4F8JhThVSisUOnYppT2Dt6n0QOkZPISewaVLB2cr4hahi10sxGi3RB3eP4U8eB95kBDnftm358Ma/s7HFKnfNeIkhzuJNhL3+arngWdRCSaYYIIJJphggmcJA4CykigrCQDYbjwr0K9/Dy7kxwqmRjeckPPWujoSBwBCzm8AxOlo91PffaWjtGkeTC0E3sourKyZXkyzwjgYXoPB3gDuEpmE06wQOv4PFibhsfRg5Q4bPTEAob8Py3gy4yS3Bum91VGbHq+aQe9ljHrKfAECrTFA1Qf7QwAAAABJRU5ErkJggg==', w:80, h:72},
-  {id:'shelf',  img:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC4AAAAkCAYAAAD2IghRAAADS0lEQVR4nO2Yz0/TYBiAH5CMrYmDrZSKv4iORYFFDhyMB2NmEBL0RLx40RguetOTiR6JJv4NREg8aDx5QaPRuBgPXvQwHSDCiOOHMOocCrItEfEw2q1bOwZscyQ+SfN23/f17ZOv7duvq/DabGvkgeyw5jNs24Sj8bzGVQF422QAJFEonlEBUCIrAPj8YSrVxnKXBr1jZWZDuaO6Vm4wrmz5L15q/ouXmipI1cdyry6qJ6yLG3WUO5q4zx8uWFL1TVzInJm5dTPuOrB724mD00u63y1uB1//1CCJtabHKJFF9lb+0LX51o7jOuoi+CmoRXnimdZflZmkWCiRxYLmK1lVcTcf5nx9Anfz4azNjN6eY7qYTtFnXBYsfF2G8dFJxqmGhUnTcTp+wc07j4FUTKfo4pIo0CnmM1JfirsT77JGvE/b37J4qEuk8Xkk5xhvm7zlEmuv3mWYT8VU/PqjIa4NXALQBFXZUJdIq6eJYcA6fxbZf98wR8nKYbq03enkxpnb3H1xi1BX8lp3e0/wlLd0e08AEJw/wu5aO+G2i8T3PDG8Ai1uBwAHEzH273No7c2nJEZfK8zMRpmqtmn9M7NR0/hsKvVZZ1hVrg1cYsz/gaG5QQBaPU1Y589q8iqujjGWFn/i6hjLd8IKRpZ4u7sOgI+/h2iUJFo9TQRfJmf21UOnNq7z0BUaJWlT0nKDXdv2uhqQG+y6/uZTUs6Yjuk9HlIUGiUpuV34zquHcPrCd03a7nTSyRX6lT6GAxP0TFbonnpNVi1ziRjv34W09vR9WbBAIsaLB58BTKOpeHB6iXZ3Hb3LTu4FJsCT6nN1KISU5H6/0se5hssMzQ0yHJigd9lJlGjW6x5SK85gYtVsjnCJQs7+FKl7vMJrs61522R8/jAtbgeeA7V5JDAmML3IyHhUV7aKgc8fNr5VHPUOrIIVsc5G5FtswxhfiRNdiBqeoNDkLIebkU5G8xOp5bAQjIynJsdQPL4SJ/KNTc14qckSfxNY4OT6Qzn3Jb+oHueoyVgoFRGduCxYWI2t4v+cew1ihN2yC1mwMJLRnrXq2wbpuXXikigU/IO5WB/gWjncSfj84aT4vxbZClXA1X8tsRV27D9ZO1b8L81MTrTOEY74AAAAAElFTkSuQmCC',   w:110,h:74},
-];
-const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
-
-// ---- 存档 ----
-const KEY='xiaozhu_home_v1';
-let S=load();
-function load(){ try{const r=localStorage.getItem(KEY); if(r) return JSON.parse(r);}catch(e){}
-  return { floor:0, coins:120, placed:[], needs:{mood:70,food:60,clean:80,energy:75} }; }
-function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
-
-const room=document.getElementById('room');
-const floorEl=document.getElementById('floor');
-const petEl=document.getElementById('pet');
-const sayEl=document.getElementById('say');
-let edit=false, selected=null;
-
-function applyFloor(){ floorEl.style.background=`url('${FLOORS[S.floor]}') repeat`; floorEl.style.backgroundSize='36px 36px'; }
-applyFloor();
-
-// ---- 渲染已摆放家具 ----
-function renderPlaced(){
-  document.querySelectorAll('.furn').forEach(e=>e.remove());
-  S.placed.forEach((f,idx)=>{
-    const c=CATMAP[f.id]; if(!c) return;
-    const el=document.createElement('div'); el.className='furn'; el.dataset.idx=idx;
-    el.style.width=c.w+'px'; el.style.height=c.h+'px';
-    el.style.left=f.x+'px'; el.style.top=f.y+'px';
-    const img=document.createElement('img'); img.src=c.img; el.appendChild(img);
-    room.appendChild(el);
-    makeDraggable(el);
-  });
-}
-function makeDraggable(el){
-  let sx,sy,ox,oy,moved;
-  el.addEventListener('pointerdown',e=>{
-    if(!edit) return; e.preventDefault();
-    selectFurn(el);
-    sx=e.clientX; sy=e.clientY; ox=parseInt(el.style.left); oy=parseInt(el.style.top); moved=false;
-    el.setPointerCapture(e.pointerId);
-    const move=ev=>{ const dx=ev.clientX-sx, dy=ev.clientY-sy; if(Math.abs(dx)+Math.abs(dy)>4)moved=true;
-      el.style.left=(ox+dx)+'px'; el.style.top=(oy+dy)+'px'; };
-    const up=ev=>{ el.releasePointerCapture(e.pointerId); el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up);
-      // 吸附网格
-      let nx=Math.round(parseInt(el.style.left)/CELL)*CELL;
-      let ny=Math.round(parseInt(el.style.top)/CELL)*CELL;
-      nx=Math.max(0,Math.min(room.clientWidth-el.offsetWidth,nx));
-      ny=Math.max(room.clientHeight*0.26,Math.min(room.clientHeight-el.offsetHeight-20,ny));
-      el.style.left=nx+'px'; el.style.top=ny+'px';
-      S.placed[el.dataset.idx].x=nx; S.placed[el.dataset.idx].y=ny; save();
-    };
-    el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
-  });
-}
-function selectFurn(el){ document.querySelectorAll('.furn').forEach(e=>e.classList.remove('sel')); if(el){el.classList.add('sel'); selected=el;} else selected=null; }
-
-// ---- 装修模式 ----
-function setEdit(on){
-  edit=on;
-  document.getElementById('grid').style.display=on?'block':'none';
-  document.getElementById('tray').style.display=on?'flex':'none';
-  document.getElementById('editbar').style.display=on?'flex':'none';
-  document.getElementById('hint').style.display=on?'block':'none';
-  document.getElementById('care').style.display=on?'none':'flex';
-  document.getElementById('btnEdit').style.display=on?'none':'flex';
-  if(!on) selectFurn(null);
-}
-document.getElementById('btnEdit').onclick=()=>setEdit(true);
-document.getElementById('btnDone').onclick=()=>setEdit(false);
-document.getElementById('btnFloor').onclick=()=>{ S.floor=(S.floor+1)%FLOORS.length; applyFloor(); save(); };
-
-// 托盘：点一下把家具加到房间中间
-const tray=document.getElementById('tray');
-CATALOG.forEach(c=>{
-  const it=document.createElement('div'); it.className='item';
-  const img=document.createElement('img'); img.src=c.img; it.appendChild(img);
-  it.onclick=()=>{ S.placed.push({id:c.id,x:Math.round((room.clientWidth-c.w)/2/CELL)*CELL,y:Math.round(room.clientHeight*0.4/CELL)*CELL}); save(); renderPlaced(); bubble('放好啦，拖我到喜欢的位置~'); };
-  tray.appendChild(it);
-});
-// 点选中的家具→收回背包
-room.addEventListener('pointerdown',e=>{ if(edit && !e.target.closest('.furn')) selectFurn(null); });
-document.addEventListener('dblclick',e=>{ const f=e.target.closest('.furn'); if(edit&&f){ S.placed.splice(f.dataset.idx,1); save(); renderPlaced(); } });
-
-// ---- 照顾 + 需求 ----
-function clampNeeds(){ for(const k in S.needs) S.needs[k]=Math.max(0,Math.min(100,S.needs[k])); }
-function renderNeeds(){
-  clampNeeds();
-  document.querySelectorAll('[data-need]').forEach(i=>{
-    const v=S.needs[i.dataset.need]; i.style.width=v+'%';
-    i.style.background=v>=60?'linear-gradient(90deg,#8fd6a8,#57b07a)':v>=30?'linear-gradient(90deg,#f0c86a,#e0a94a)':'linear-gradient(90deg,#f0a0b0,#d0506a)';
-  });
-  document.getElementById('coinN').textContent=S.coins;
-}
-const CARE_TXT={pet:['嘿嘿~','舒服…','再摸摸'],food:['谢谢~','好吃！','嗯！甜'],clean:['香香的~','搓搓澡','舒服'],energy:['困了…','晚安~','抱抱睡']};
-document.querySelectorAll('[data-care]').forEach(b=>{
-  b.onclick=()=>{
-    const k=b.dataset.care;
-    const map={pet:'mood',food:'food',clean:'clean',energy:'energy'};
-    S.needs[map[k]]=Math.min(100,S.needs[map[k]]+18);
-    if(k!=='pet') S.needs.mood=Math.min(100,S.needs.mood+6);
-    S.coins+=1; save(); renderNeeds();
-    const t=CARE_TXT[k]; bubble(t[Math.floor(Math.random()*t.length)]);
-    petHop();
-  };
-});
-petEl.onclick=()=>{ S.needs.mood=Math.min(100,S.needs.mood+4); save(); renderNeeds(); bubble('妹妹~'); petHop(); };
-
-function bubble(t){ sayEl.textContent=t; sayEl.style.top=(petEl.offsetTop-38)+'px'; sayEl.style.opacity=1; clearTimeout(bubble._t); bubble._t=setTimeout(()=>sayEl.style.opacity=0,1800); }
-function petHop(){ petEl.animate([{transform:'translateX(-50%) translateY(0)'},{transform:'translateX(-50%) translateY(-10px)'},{transform:'translateX(-50%) translateY(0)'}],{duration:320}); }
-
-// 需求随时间缓降
-setInterval(()=>{ for(const k in S.needs) S.needs[k]=Math.max(0,S.needs[k]-1); save(); renderNeeds(); }, 20000);
-
-// 初始
-renderPlaced(); renderNeeds();
-setTimeout(()=>bubble('妹妹，你回来啦~'),600);
-</script>
-</body></html>
+<script src="game.js"></script>
+</body>
+</html>
