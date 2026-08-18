@@ -12,7 +12,6 @@ const ICONS = {
   hammer:{p:{D:'#6a4a30',G:'#b0895a'},g:['..GGG','.GGGG','DDG..','.DD..','DD...']},
   brush:{p:{D:'#6a4a30',B:'#7ab0d0'},g:['....D','...DD','..DD.','BDD..','BB...']},
   check:{p:{G:'#5aa050'},g:['....G','...GG','G.GG.','GGG..','.G...']},
-  gear :{p:{D:'#8a6a4a'},g:['.D.D.','DDDDD','.DDD.','DDDDD','.D.D.']},
 };
 function svgIcon(name,px){
   const ic=ICONS[name]; if(!ic) return '';
@@ -32,28 +31,50 @@ function paintIcons(){
 }
 
 /* ---------- 数据 ---------- */
-const CELL=44;
+const CELL=20;
 const FLOORS=['floor_wood.png','floor_2.png'];
-// 家具目录：id,名字,图,显示宽高
+// 家具目录（CosyCabin 暖木萌系）：id,名字,图,显示宽高, flat=地毯(压在最底), wall=挂墙
 const CATALOG=[
-  {id:'bed',     name:'小床', img:'bed_obj_6.png', w:130,h:70},
-  {id:'wardrobe',name:'柜子', img:'bed_obj_0.png', w:92, h:70},
-  {id:'table',   name:'桌子', img:'bed_obj_7.png', w:64, h:78},
-  {id:'bath',    name:'浴桶', img:'bed_obj_9.png', w:92, h:50},
-  {id:'shelf',   name:'书架', img:'plant_0.png',   w:74, h:84},
-  {id:'lowshelf',name:'矮柜', img:'plant_2.png',   w:92, h:74},
-  {id:'plant',   name:'绿植', img:'plant_4.png',   w:34, h:78},
+  {id:'bed',      name:'蓝床', img:'cc_bed.png',       w:72, h:106},
+  {id:'nightstand',name:'床头柜',img:'cc_nightstand.png',w:70, h:58},
+  {id:'lamp',     name:'台灯', img:'cc_lamp.png',      w:34, h:78},
+  {id:'bookshelf',name:'书架', img:'cc_bookshelf.png', w:98, h:110},
+  {id:'dresser',  name:'柜子', img:'cc_dresser.png',   w:84, h:112},
+  {id:'wardrobe', name:'衣柜', img:'cc_wardrobe.png',  w:40, h:104},
+  {id:'chair',    name:'椅子', img:'cc_chair.png',     w:40, h:98},
+  {id:'plant',    name:'绿植', img:'cc_plant.png',     w:40, h:68},
+  {id:'rug',      name:'地毯', img:'cc_rug.png',       w:130,h:82, flat:true},
+  {id:'window',   name:'窗户', img:'cc_window.png',    w:78, h:50, wall:true},
+  {id:'picture',  name:'挂画', img:'cc_picture.png',   w:40, h:70, wall:true},
 ];
 const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
 
 /* ---------- 存档 ---------- */
-const KEY='xiaozhou_home_v2';
+const KEY='xiaozhou_home_v3';
+let fresh=false;
 let S=load();
 function load(){
   try{const r=localStorage.getItem(KEY); if(r) return JSON.parse(r);}catch(e){}
+  fresh=true;
   return { floor:0, coins:120, placed:[], needs:{mood:70,food:60,clean:80,energy:75} };
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
+
+/* 开局样板间：按房间比例摆好（可随意移动/替换） */
+function starterLayout(cw,ch){
+  const put=(id,cx,cy)=>{ const c=CATMAP[id];
+    return {id, x:Math.round(cx*cw-c.w/2), y:Math.round(cy*ch-c.h/2)}; };
+  return [
+    put('rug',      0.50,0.70),
+    put('bed',      0.74,0.53),
+    put('nightstand',0.47,0.55),
+    put('lamp',     0.47,0.47),
+    put('bookshelf',0.15,0.55),
+    put('plant',    0.90,0.72),
+    put('window',   0.34,0.16),
+    put('picture',  0.12,0.17),
+  ];
+}
 
 /* ---------- 元素 ---------- */
 const room=document.getElementById('room');
@@ -72,7 +93,7 @@ function renderPlaced(){
   document.querySelectorAll('.furn').forEach(e=>e.remove());
   S.placed.forEach((f,idx)=>{
     const c=CATMAP[f.id]; if(!c) return;
-    const el=document.createElement('div'); el.className='furn'; el.dataset.idx=idx;
+    const el=document.createElement('div'); el.className='furn'+(c.flat?' flat':''); el.dataset.idx=idx;
     el.style.width=c.w+'px'; el.style.height=c.h+'px';
     el.style.left=f.x+'px'; el.style.top=f.y+'px';
     const img=document.createElement('img'); img.src=c.img; el.appendChild(img);
@@ -93,7 +114,7 @@ function makeDraggable(el){
       let nx=Math.round(parseInt(el.style.left)/CELL)*CELL;
       let ny=Math.round(parseInt(el.style.top)/CELL)*CELL;
       nx=Math.max(0,Math.min(room.clientWidth-el.offsetWidth,nx));
-      ny=Math.max(room.clientHeight*0.30,Math.min(room.clientHeight-el.offsetHeight-24,ny));
+      ny=Math.max(room.clientHeight*0.05,Math.min(room.clientHeight-el.offsetHeight-16,ny));
       el.style.left=nx+'px'; el.style.top=ny+'px';
       S.placed[el.dataset.idx].x=nx; S.placed[el.dataset.idx].y=ny; save();
     };
@@ -185,6 +206,7 @@ setInterval(()=>{ for(const k in S.needs) S.needs[k]=Math.max(0,S.needs[k]-1); s
 /* ---------- 启动 ---------- */
 paintIcons();
 applyFloor();
+if(fresh){ S.placed=starterLayout(room.clientWidth,room.clientHeight); save(); }
 renderPlaced();
 renderNeeds();
 setTimeout(()=>bubble('妹妹，你回来啦~'),700);

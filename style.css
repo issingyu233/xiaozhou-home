@@ -13,51 +13,18 @@ img{image-rendering:pixelated;-webkit-user-drag:none;}
 svg{display:block;shape-rendering:crispEdges;}
 
 #app{position:relative;width:min(400px,100vw);height:100vh;max-height:820px;
-  overflow:hidden;background:#f4e6c6;}
+  overflow:hidden;background:#e7cba0;}
 
 /* ===== 房间外壳 ===== */
 #room{position:absolute;inset:0;z-index:0;}
-#wall{position:absolute;left:0;right:0;top:0;height:42%;z-index:0;
-  background:
-    repeating-linear-gradient(180deg,rgba(0,0,0,.03) 0 22px,rgba(0,0,0,0) 22px 24px),
-    linear-gradient(180deg,#f6ead0,#efe0c0);}
-#wallbase{position:absolute;left:0;right:0;top:42%;height:10px;z-index:2;
-  background:linear-gradient(180deg,#b98a54,#9a6f40);
-  box-shadow:0 2px 0 rgba(74,50,38,.35);}
-
-/* 窗户 */
-#window{position:absolute;top:9%;left:50%;transform:translateX(-50%);
-  width:150px;height:104px;z-index:1;
-  background:#f7efd8;border:6px solid #cbb083;border-radius:4px;
-  box-shadow:2px 3px 0 rgba(74,50,38,.18);overflow:hidden;}
-#window .sky{position:absolute;inset:0;background:linear-gradient(180deg,#bfe6f5,#a9d8ef);}
-#window .cloud{position:absolute;background:#fff;border-radius:20px;opacity:.9;}
-#window .cloud.c1{width:44px;height:14px;top:20px;left:14px;box-shadow:16px 6px 0 -2px #fff;}
-#window .cloud.c2{width:30px;height:11px;top:58px;right:12px;}
-#window .pane{position:absolute;background:#cbb083;}
-#window .pane.v{left:50%;top:0;bottom:0;width:5px;transform:translateX(-50%);}
-#window .pane.h{top:50%;left:0;right:0;height:5px;transform:translateY(-50%);}
-#window .sill{position:absolute;left:-8px;right:-8px;bottom:-6px;height:8px;
-  background:#b98a54;border-radius:2px;}
-
-/* 窗帘 */
-.curtain{position:absolute;top:0;width:58px;height:150px;z-index:1;
-  background:repeating-linear-gradient(90deg,#a9cf8f 0 8px,#93bd77 8px 16px);
-  border:4px solid #6f9a55;border-top:0;border-radius:0 0 8px 8px;
-  box-shadow:2px 3px 0 rgba(74,50,38,.15);}
-.curtain.l{left:14px;border-left:0;}
-.curtain.r{right:14px;border-right:0;}
-.curtain::after{content:'';position:absolute;left:0;right:0;bottom:-6px;height:12px;
-  background:radial-gradient(circle at 10px -2px,#93bd77 8px,transparent 9px) repeat-x;
-  background-size:20px 12px;}
-
-/* 地板 */
-#floor{position:absolute;left:0;right:0;top:calc(42% + 10px);bottom:0;z-index:0;
+#wall{position:absolute;left:0;right:0;top:0;height:44%;z-index:0;
+  background:url('cc_wall.png') repeat;
+  background-size:27px auto;image-rendering:pixelated;}
+#wallbase{position:absolute;left:0;right:0;top:44%;height:14px;z-index:2;
+  background:linear-gradient(180deg,#b5854e 0 6px,#9a6c3c 6px 14px);
+  box-shadow:0 2px 0 rgba(74,50,38,.3);}
+#floor{position:absolute;left:0;right:0;top:calc(44% + 14px);bottom:0;z-index:0;
   image-rendering:pixelated;}
-#rug{position:absolute;left:50%;bottom:16%;transform:translateX(-50%);
-  width:210px;height:74px;z-index:1;border-radius:50%;
-  background:radial-gradient(ellipse at center,#f3d5a6 0 58%,#e7bd82 58% 78%,#d7a869 78% 100%);
-  border:4px solid #c99456;box-shadow:0 4px 0 rgba(74,50,38,.12);}
 
 #grid{position:absolute;inset:0;z-index:3;display:none;pointer-events:none;
   background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),
@@ -65,13 +32,17 @@ svg{display:block;shape-rendering:crispEdges;}
 
 /* 家具 */
 .furn{position:absolute;z-index:4;touch-action:none;}
-.furn img{width:100%;height:100%;}
-.furn.sel{outline:2px dashed #fff;outline-offset:2px;filter:drop-shadow(0 0 4px #fff);}
+.furn img{width:100%;height:100%;image-rendering:pixelated;
+  filter:drop-shadow(0 2px 0 rgba(80,55,30,.14));}
+.furn.flat{z-index:2;}
+.furn.flat img{filter:none;}
+.furn.sel{outline:2px dashed #fff;outline-offset:2px;}
+.furn.sel img{filter:drop-shadow(0 0 4px #fff);}
 
 /* 角色 */
-#pet{position:absolute;z-index:6;width:104px;left:50%;bottom:15%;
+#pet{position:absolute;z-index:6;width:96px;left:50%;bottom:16%;
   transform:translateX(-50%);cursor:pointer;
-  filter:drop-shadow(0 4px 0 rgba(120,80,40,.14));
+  filter:drop-shadow(0 4px 0 rgba(120,80,40,.16));
   animation:bob 3.2s ease-in-out infinite;}
 @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-4px);}}
 #say{position:absolute;z-index:8;left:50%;transform:translateX(-50%);
@@ -113,11 +84,11 @@ svg{display:block;shape-rendering:crispEdges;}
 /* 装修托盘 */
 #tray{position:absolute;left:10px;right:10px;bottom:14px;z-index:11;
   display:none;gap:8px;padding:10px;overflow-x:auto;}
-#tray .item{flex:0 0 auto;width:60px;height:60px;display:flex;align-items:center;
+#tray .item{flex:0 0 auto;width:62px;height:62px;display:flex;align-items:center;
   justify-content:center;padding:6px;background:#fdf3dc;border:2px solid #cbb083;
   border-radius:8px;cursor:pointer;}
 #tray .item:active{transform:translateY(1px);}
-#tray .item img{max-width:100%;max-height:100%;}
+#tray .item img{max-width:100%;max-height:100%;image-rendering:pixelated;}
 
 /* 底部照料 */
 #care{position:absolute;left:0;right:0;bottom:16px;z-index:10;
