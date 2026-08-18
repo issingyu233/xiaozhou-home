@@ -47,7 +47,7 @@ const CATALOG=[
 const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
 
 /* ---------- 存档 ---------- */
-const KEY='xiaozhu_home_v2';
+const KEY='xiaozhou_home_v2';
 let S=load();
 function load(){
   try{const r=localStorage.getItem(KEY); if(r) return JSON.parse(r);}catch(e){}
