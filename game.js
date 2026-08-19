@@ -46,21 +46,35 @@ const FLOORS=[
   {id:'green',img:'floor_green.png', name:'绿瓷砖'},
 ];
 const CATS=[{key:'furn',name:'家具'},{key:'deco',name:'装饰'},{key:'floor',name:'地板'}];
-// 家具目录（CosyCabin 暖木萌系）：cat=分类, flat=地毯(压底), 显示宽高
+// 家具目录：cat=分类, flat=地毯(压底), price=0 为开局自带, >0 需在商店购买
 const CATALOG=[
-  {id:'bed',      name:'蓝床', cat:'furn', img:'cc_bed.png',       w:72, h:106},
-  {id:'nightstand',name:'床头柜',cat:'furn',img:'cc_nightstand.png',w:70, h:58},
-  {id:'lamp',     name:'台灯', cat:'furn', img:'cc_lamp.png',      w:34, h:78},
-  {id:'bookshelf',name:'书架', cat:'furn', img:'cc_bookshelf.png', w:98, h:110},
-  {id:'dresser',  name:'柜子', cat:'furn', img:'cc_dresser.png',   w:84, h:112},
-  {id:'wardrobe', name:'衣柜', cat:'furn', img:'cc_wardrobe.png',  w:40, h:104},
-  {id:'chair',    name:'椅子', cat:'furn', img:'cc_chair.png',     w:40, h:98},
-  {id:'rug',      name:'地毯', cat:'deco', img:'cc_rug.png',       w:130,h:82, flat:true},
-  {id:'plant',    name:'绿植', cat:'deco', img:'cc_plant.png',     w:40, h:68},
-  {id:'window',   name:'窗户', cat:'deco', img:'cc_window.png',    w:78, h:50},
-  {id:'picture',  name:'挂画', cat:'deco', img:'cc_picture.png',   w:40, h:70},
+  // —— 开局自带 ——
+  {id:'bed',      name:'蓝床',  cat:'furn', img:'cc_bed.png',        w:72, h:106, price:0},
+  {id:'nightstand',name:'床头柜',cat:'furn',img:'cc_nightstand.png', w:70, h:58,  price:0},
+  {id:'lamp',     name:'台灯',  cat:'furn', img:'cc_lamp.png',       w:34, h:78,  price:0},
+  {id:'bookshelf',name:'书架',  cat:'furn', img:'cc_bookshelf.png',  w:98, h:110, price:0},
+  {id:'rug',      name:'蓝地毯',cat:'deco', img:'cc_rug.png',        w:130,h:82,  price:0, flat:true},
+  {id:'plant',    name:'绿植',  cat:'deco', img:'cc_plant.png',      w:40, h:68,  price:0},
+  {id:'window',   name:'窗户',  cat:'deco', img:'cc_window.png',     w:78, h:50,  price:0},
+  {id:'picture',  name:'挂画',  cat:'deco', img:'cc_picture.png',    w:40, h:70,  price:0},
+  // —— 商店购买 ——
+  {id:'dresser',  name:'抽屉柜',cat:'furn', img:'cc_dresser.png',    w:84, h:112, price:50},
+  {id:'wardrobe', name:'衣柜',  cat:'furn', img:'cc_wardrobe.png',   w:40, h:104, price:45},
+  {id:'chair',    name:'木椅',  cat:'furn', img:'cc_chair.png',      w:40, h:98,  price:25},
+  {id:'bed_green',name:'绿床',  cat:'furn', img:'cc_bed_green.png',  w:72, h:106, price:65},
+  {id:'bed_wood', name:'原木床',cat:'furn', img:'cc_bed_wood.png',   w:72, h:106, price:65},
+  {id:'sofa_green',name:'绿沙发',cat:'furn',img:'cc_sofa_green.png', w:92, h:69,  price:60},
+  {id:'sofa_brown',name:'棕沙发',cat:'furn',img:'cc_sofa_brown.png', w:92, h:69,  price:60},
+  {id:'armchair', name:'单人沙发',cat:'furn',img:'cc_armchair.png',  w:56, h:70,  price:40},
+  {id:'table',    name:'餐桌',  cat:'furn', img:'cc_table.png',      w:100,h:64,  price:50},
+  {id:'coffee',   name:'茶几',  cat:'furn', img:'cc_coffee.png',     w:100,h:64,  price:45},
+  {id:'roundtable',name:'圆桌', cat:'furn', img:'cc_roundtable.png', w:76, h:71,  price:40},
+  {id:'clothtable',name:'布艺桌',cat:'furn',img:'cc_clothtable.png', w:80, h:71,  price:55},
+  {id:'fireplace',name:'壁炉',  cat:'deco', img:'cc_fireplace.png',  w:70, h:92,  price:80},
+  {id:'rug_orange',name:'橙地毯',cat:'deco', img:'cc_rug_orange.png',w:130,h:82,  price:30, flat:true},
 ];
 const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
+const STARTER_OWNED=CATALOG.filter(c=>c.price===0).map(c=>c.id);
 
 /* ---------- 存档 ---------- */
 const KEY='xiaozhou_home_v5';
@@ -69,9 +83,12 @@ let S=load();
 function load(){
   try{const r=localStorage.getItem(KEY); if(r) return JSON.parse(r);}catch(e){}
   fresh=true;
-  return { floor:0, coins:120, gems:5, placed:[], pet:null, needs:{mood:70,food:60,clean:80,energy:75} };
+  return { floor:0, coins:200, gems:5, owned:STARTER_OWNED.slice(), placed:[], pet:null, needs:{mood:70,food:60,clean:80,energy:75} };
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
+// 兼容旧存档：补上 owned（保留已摆放的家具）
+if(!S.owned){ S.owned=[...new Set([...STARTER_OWNED, ...S.placed.map(p=>p.id)])]; }
+if(S.gems==null) S.gems=5;
 
 const room=document.getElementById('room');
 const floorEl=document.getElementById('floor');
@@ -184,8 +201,32 @@ function setEdit(on){
 }
 document.getElementById('btnEdit').onclick=()=>setEdit(true);
 document.getElementById('btnDone').onclick=()=>setEdit(false);
-/* 占位入口：功能之后做 */
-document.getElementById('btnShop').onclick=()=>bubble('商店马上就来~ 攒着金币哦');
+/* 商店 */
+const shopEl=document.getElementById('shop');
+document.getElementById('btnShop').onclick=()=>openShop();
+document.getElementById('shopClose').onclick=()=>closeShop();
+function openShop(){ renderShop(); shopEl.style.display='flex'; }
+function closeShop(){ shopEl.style.display='none'; }
+function shopMsg(t){ const m=document.getElementById('shopmsg'); m.textContent=t; m.style.opacity=1; clearTimeout(shopMsg._t); shopMsg._t=setTimeout(()=>m.style.opacity=0,1600); }
+function renderShop(){
+  document.getElementById('shopCoin').textContent=S.coins;
+  const box=document.getElementById('shopitems'); box.innerHTML='';
+  CATALOG.filter(c=>c.price>0).forEach(c=>{
+    const owned=S.owned.includes(c.id), can=S.coins>=c.price;
+    const it=document.createElement('div'); it.className='sitem';
+    it.innerHTML=`<div class="pic"><img src="${c.img}"></div><div class="nm">${c.name}</div>`+
+      (owned?`<div class="price got">已拥有</div>`:`<div class="price${can?'':' no'}"><span class="ci"></span>${c.price}</div>`);
+    const ci=it.querySelector('.ci'); if(ci) ci.innerHTML=svgIcon('coin',12);
+    if(!owned) it.onclick=()=>buy(c.id);
+    box.appendChild(it);
+  });
+}
+function buy(id){
+  const c=CATMAP[id]; if(!c||S.owned.includes(id)) return;
+  if(S.coins<c.price){ shopMsg('金币不够啦~ 多陪陪小昼攒金币'); return; }
+  S.coins-=c.price; S.owned.push(id); save(); renderShop(); renderNeeds();
+  shopMsg('买到「'+c.name+'」啦！进装修就能摆上~');
+}
 document.getElementById('arwL').onclick=()=>bubble('厨房·浴室 之后解锁哦~');
 document.getElementById('arwR').onclick=()=>bubble('厨房·浴室 之后解锁哦~');
 document.querySelectorAll('#nav .n').forEach(n=>{ n.onclick=()=>{
@@ -209,7 +250,9 @@ function renderTray(){
       it.onclick=()=>{ S.floor=i; applyFloor(); save(); renderTray(); bubble('换地板咯~'); };
       box.appendChild(it); });
   } else {
-    CATALOG.filter(c=>c.cat===curCat).forEach(c=>{ const it=document.createElement('div'); it.className='item';
+    const list=CATALOG.filter(c=>c.cat===curCat && S.owned.includes(c.id));
+    if(!list.length){ const e=document.createElement('div'); e.style.cssText='color:#a58a5a;font-size:11px;padding:14px 8px;'; e.textContent='这类还没有家具，去商店买几件吧~'; box.appendChild(e); }
+    list.forEach(c=>{ const it=document.createElement('div'); it.className='item';
       const img=document.createElement('img'); img.src=c.img; it.appendChild(img); it.title=c.name;
       it.onclick=()=>{ S.placed.push({id:c.id,
         x:Math.round((room.clientWidth-c.w)/2/CELL)*CELL, y:Math.round(room.clientHeight*0.42/CELL)*CELL, f:0,r:0});
