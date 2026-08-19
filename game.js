@@ -168,6 +168,10 @@ function selectPet(){ document.querySelectorAll('.furn').forEach(e=>e.classList.
 /* 选中操作条 */
 function showSelbarFor(el){
   const idx=+el.dataset.idx;
+  const it=S.placed[idx]; const c=CATMAP[it.id];
+  // 只有有多方向素材的家具才显示"旋转"
+  const rotBtn=selbar.querySelector('[data-act="rot"]');
+  rotBtn.style.display=(c&&c.dirs)?'':'none';
   selbar.style.display='flex';
   selbar.style.left=(parseInt(el.style.left)+el.offsetWidth/2)+'px';
   selbar.style.top=Math.max(2,parseInt(el.style.top)-34)+'px';
