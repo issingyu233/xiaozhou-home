@@ -63,9 +63,12 @@ const CATALOG=[
   {id:'chair',    name:'木椅',  cat:'furn', img:'cc_chair.png',      w:40, h:98,  price:25},
   {id:'bed_green',name:'绿床',  cat:'furn', img:'cc_bed_green.png',  w:72, h:106, price:65},
   {id:'bed_wood', name:'原木床',cat:'furn', img:'cc_bed_wood.png',   w:72, h:106, price:65},
-  {id:'sofa_green',name:'绿沙发',cat:'furn',img:'cc_sofa_green.png', w:92, h:69,  price:60},
-  {id:'sofa_brown',name:'棕沙发',cat:'furn',img:'cc_sofa_brown.png', w:92, h:69,  price:60},
-  {id:'armchair', name:'单人沙发',cat:'furn',img:'cc_armchair.png',  w:56, h:70,  price:40},
+  {id:'sofa_green',name:'绿沙发',cat:'furn',price:60,img:'cc_sofa_green_0.png',w:92,h:69,
+    dirs:[{img:'cc_sofa_green_0.png',w:92,h:69},{img:'cc_sofa_green_1.png',w:51,h:106},{img:'cc_sofa_green_2.png',w:92,h:51},{img:'cc_sofa_green_3.png',w:51,h:106}]},
+  {id:'sofa_brown',name:'棕沙发',cat:'furn',price:60,img:'cc_sofa_brown_0.png',w:92,h:69,
+    dirs:[{img:'cc_sofa_brown_0.png',w:92,h:69},{img:'cc_sofa_brown_1.png',w:51,h:106},{img:'cc_sofa_brown_2.png',w:92,h:51},{img:'cc_sofa_brown_3.png',w:51,h:106}]},
+  {id:'armchair', name:'单人沙发',cat:'furn',price:40,img:'cc_armchair_0.png',w:55,h:69,
+    dirs:[{img:'cc_armchair_0.png',w:55,h:69},{img:'cc_armchair_1.png',w:51,h:69},{img:'cc_armchair_2.png',w:55,h:51},{img:'cc_armchair_3.png',w:51,h:69}]},
   {id:'table',    name:'餐桌',  cat:'furn', img:'cc_table.png',      w:100,h:64,  price:50},
   {id:'coffee',   name:'茶几',  cat:'furn', img:'cc_coffee.png',     w:100,h:64,  price:45},
   {id:'roundtable',name:'圆桌', cat:'furn', img:'cc_roundtable.png', w:76, h:71,  price:40},
@@ -115,16 +118,17 @@ function starterLayout(cw,ch){
 function petDefault(cw,ch){ return {x:Math.round(cw/2-48), y:Math.round(ch*0.58)}; }
 
 /* ---------- 家具渲染 ---------- */
-function furnTransform(it){ return `rotate(${it.r||0}deg) scaleX(${it.f?-1:1})`; }
 function renderPlaced(){
   document.querySelectorAll('.furn').forEach(e=>e.remove());
   S.placed.forEach((it,idx)=>{
     const c=CATMAP[it.id]; if(!c) return;
+    let img=c.img,w=c.w,h=c.h,rot=it.r||0;
+    if(c.dirs){ const d=c.dirs[(it.dir||0)%c.dirs.length]; img=d.img; w=d.w; h=d.h; rot=0; } // 多方向:换朝向贴图
     const el=document.createElement('div'); el.className='furn'+(c.flat?' flat':''); el.dataset.idx=idx;
-    el.style.width=c.w+'px'; el.style.height=c.h+'px';
+    el.style.width=w+'px'; el.style.height=h+'px';
     el.style.left=it.x+'px'; el.style.top=it.y+'px';
-    el.style.transform=furnTransform(it);
-    const img=document.createElement('img'); img.src=c.img; el.appendChild(img);
+    el.style.transform=`rotate(${rot}deg) scaleX(${it.f?-1:1})`;
+    const im=document.createElement('img'); im.src=img; el.appendChild(im);
     room.appendChild(el);
     makeDraggable(el,'furn');
   });
@@ -174,7 +178,7 @@ selbar.querySelectorAll('.sb').forEach(b=>{
   b.onclick=()=>{
     const idx=+selbar.dataset.idx; const it=S.placed[idx]; if(!it) return;
     if(b.dataset.act==='flip') it.f=it.f?0:1;
-    else if(b.dataset.act==='rot') it.r=((it.r||0)+90)%360;
+    else if(b.dataset.act==='rot'){ const c=CATMAP[it.id]; if(c&&c.dirs) it.dir=((it.dir||0)+1)%c.dirs.length; else it.r=((it.r||0)+90)%360; }
     else if(b.dataset.act==='del'){ S.placed.splice(idx,1); save(); hideSelbar(); selectFurn(null); renderPlaced(); return; }
     save(); renderPlaced();
     const nel=document.querySelector(`.furn[data-idx="${idx}"]`);
