@@ -7,92 +7,100 @@
   font-family:'Zpix','Microsoft YaHei',sans-serif;
   -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
-body{display:flex;align-items:center;justify-content:center;
-  background:#c7ad86;overflow:hidden;}
+body{display:flex;align-items:center;justify-content:center;background:#c7ad86;overflow:hidden;}
 img{image-rendering:pixelated;-webkit-user-drag:none;}
 svg{display:block;shape-rendering:crispEdges;}
 
-#app{position:relative;width:min(400px,100vw);height:100vh;max-height:820px;
-  overflow:hidden;background:#e7cba0;}
+#app{position:relative;width:min(400px,100vw);height:100vh;max-height:820px;overflow:hidden;background:#e7cba0;}
 
 /* ===== 房间外壳 ===== */
 #room{position:absolute;inset:0;z-index:0;}
-#wall{position:absolute;left:0;right:0;top:0;height:44%;z-index:0;
-  background:url('cc_wall.png') repeat;
-  background-size:27px auto;image-rendering:pixelated;}
+#wall{position:absolute;left:0;right:0;top:0;height:44%;background:url('cc_wall.png') repeat;background-size:27px auto;image-rendering:pixelated;}
 #wallbase{position:absolute;left:0;right:0;top:44%;height:14px;z-index:2;
-  background:linear-gradient(180deg,#b5854e 0 6px,#9a6c3c 6px 14px);
-  box-shadow:0 2px 0 rgba(74,50,38,.3);}
-#floor{position:absolute;left:0;right:0;top:calc(44% + 14px);bottom:0;z-index:0;
-  image-rendering:pixelated;}
-
+  background:linear-gradient(180deg,#b5854e 0 6px,#9a6c3c 6px 14px);box-shadow:0 2px 0 rgba(74,50,38,.3);}
+#floor{position:absolute;left:0;right:0;top:calc(44% + 14px);bottom:0;z-index:0;image-rendering:pixelated;}
 #grid{position:absolute;inset:0;z-index:3;display:none;pointer-events:none;
-  background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);}
+  background-image:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px);}
 
 /* 家具 */
-.furn{position:absolute;z-index:4;touch-action:none;}
-.furn img{width:100%;height:100%;image-rendering:pixelated;
-  filter:drop-shadow(0 2px 0 rgba(80,55,30,.14));}
+.furn{position:absolute;z-index:4;touch-action:none;transform-origin:center;}
+.furn img{width:100%;height:100%;image-rendering:pixelated;filter:drop-shadow(0 2px 0 rgba(80,55,30,.14));}
 .furn.flat{z-index:2;}
 .furn.flat img{filter:none;}
 .furn.sel{outline:2px dashed #fff;outline-offset:2px;}
-.furn.sel img{filter:drop-shadow(0 0 4px #fff);}
 
 /* 角色 */
-#pet{position:absolute;z-index:6;width:96px;left:50%;bottom:16%;
-  transform:translateX(-50%);cursor:pointer;
-  filter:drop-shadow(0 4px 0 rgba(120,80,40,.16));
-  animation:bob 3.2s ease-in-out infinite;}
-@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-4px);}}
-#say{position:absolute;z-index:8;left:50%;transform:translateX(-50%);
-  background:#fff8ea;border:3px solid #4a3226;border-radius:12px;
-  padding:6px 13px;font-size:13px;color:#5a3a26;white-space:nowrap;
-  box-shadow:2px 2px 0 rgba(74,50,38,.3);opacity:0;transition:opacity .25s;pointer-events:none;}
-#say::after{content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
-  border:8px solid transparent;border-top-color:#4a3226;border-bottom:0;}
+#pet{position:absolute;z-index:6;width:96px;cursor:pointer;touch-action:none;
+  filter:drop-shadow(0 4px 0 rgba(120,80,40,.16));animation:bob 3.2s ease-in-out infinite;}
+#pet.sel{outline:2px dashed #fff;outline-offset:3px;}
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+#say{position:absolute;z-index:8;background:#fff8ea;border:3px solid #4a3226;border-radius:12px;
+  padding:6px 13px;font-size:13px;color:#5a3a26;white-space:nowrap;box-shadow:2px 2px 0 rgba(74,50,38,.3);
+  opacity:0;transition:opacity .25s;pointer-events:none;transform:translateX(-50%);}
+#say::after{content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-top-color:#4a3226;border-bottom:0;}
 
-/* ===== 通用面板（像素贴纸质感） ===== */
-.panel{background:#fff7ea;border:3px solid #3a281d;border-radius:10px;
-  box-shadow:2px 3px 0 rgba(58,40,29,.28);}
+/* 选中操作条 */
+#selbar{position:absolute;z-index:12;display:none;gap:5px;transform:translateX(-50%);}
+#selbar .sb{font-size:11px;color:#5a3a26;background:#fff7ea;border:2px solid #3a281d;border-radius:8px;
+  padding:4px 8px;box-shadow:1px 2px 0 rgba(58,40,29,.3);cursor:pointer;}
+#selbar .sb:active{transform:translateY(1px);}
+#selbar .sb.del{color:#c0503a;}
+
+/* ===== 通用面板 ===== */
+.panel{background:#fff7ea;border:3px solid #3a281d;border-radius:10px;box-shadow:2px 3px 0 rgba(58,40,29,.28);}
 .ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;}
 .lbl{font-size:10px;color:#6a4a30;}
 
 /* 顶部需求 */
-#needs{position:absolute;top:12px;left:12px;z-index:10;display:flex;gap:6px;}
-.need{display:flex;align-items:center;gap:4px;padding:5px 7px 5px 5px;}
-.need .bar{width:30px;height:8px;border:2px solid #3a281d;border-radius:5px;
-  overflow:hidden;background:#eaddc0;}
+#needs{position:absolute;top:12px;left:10px;z-index:10;display:flex;gap:5px;}
+.need{display:flex;align-items:center;gap:3px;padding:4px 5px 4px 4px;}
+.need .bar{width:20px;height:8px;border:2px solid #3a281d;border-radius:5px;overflow:hidden;background:#eaddc0;}
 .need .bar i{display:block;height:100%;width:70%;transition:width .3s,background .3s;}
-#topr{position:absolute;top:12px;right:12px;z-index:10;}
-.coin{display:flex;align-items:center;gap:5px;padding:6px 11px 6px 7px;
-  font-size:13px;color:#7a4f2e;}
+#topr{position:absolute;top:12px;right:10px;z-index:10;display:flex;gap:5px;}
+.coin{display:flex;align-items:center;gap:3px;padding:5px 7px 5px 5px;font-size:12px;color:#7a4f2e;}
 
-/* 右侧工具 */
-#tools{position:absolute;right:12px;top:92px;z-index:10;display:flex;flex-direction:column;gap:10px;align-items:flex-end;}
-.tbtn{width:52px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;}
-.tbtn:active{transform:translate(1px,2px);box-shadow:1px 1px 0 rgba(58,40,29,.28);}
+/* 右侧按钮：装修 / 完成 / 商店 */
+#btnEdit,#btnDone,#btnShop{position:absolute;right:12px;z-index:11;width:52px;height:52px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;}
+#btnEdit,#btnDone{top:66px;}
+#btnShop{top:128px;background:rgba(255,247,234,.85);}
+#btnDone{display:none;}
+#btnShop .nb{position:absolute;top:-6px;right:-5px;background:#f0803a;color:#fff;font-size:8px;padding:1px 4px;border-radius:6px;border:1.5px solid #3a281d;}
+#btnEdit:active,#btnDone:active,#btnShop:active{transform:translate(1px,2px);box-shadow:1px 1px 0 rgba(58,40,29,.28);}
+
+/* 换房间（低调） */
+#roomsel{position:absolute;left:0;right:0;top:calc(44% - 22px);z-index:9;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+#roomsel .rtag{font-size:11px;color:#7a5a3a;background:rgba(255,248,234,.72);padding:2px 12px;border-radius:8px;}
+#roomsel .arw{position:absolute;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.4);
+  display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;}
+#roomsel .arw#arwL{left:8px;} #roomsel .arw#arwR{right:8px;}
+
+/* 底部导航 */
+#nav{position:absolute;left:0;right:0;bottom:0;height:56px;z-index:9;background:#fff7ea;border-top:3px solid #e0c79a;display:flex;}
+#nav .n{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#b09a7a;font-size:10px;cursor:pointer;}
+#nav .n.on{color:#e0885a;}
 
 /* 提示 */
-.hint{position:absolute;top:74px;left:50%;transform:translateX(-50%);z-index:11;
-  font-size:11px;color:#6a4a30;padding:5px 14px;display:none;white-space:nowrap;}
-
-/* 编辑栏 */
-#editbar{position:absolute;left:0;right:0;bottom:96px;z-index:11;
-  display:none;justify-content:center;gap:14px;}
+.hint{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:11;
+  font-size:11px;color:#6a4a30;padding:5px 12px;display:none;white-space:nowrap;}
 
 /* 装修托盘 */
-#tray{position:absolute;left:10px;right:10px;bottom:14px;z-index:11;
-  display:none;gap:8px;padding:10px;overflow-x:auto;}
-#tray .item{flex:0 0 auto;width:62px;height:62px;display:flex;align-items:center;
-  justify-content:center;padding:6px;background:#fdf3dc;border:2px solid #cbb083;
-  border-radius:8px;cursor:pointer;}
-#tray .item:active{transform:translateY(1px);}
-#tray .item img{max-width:100%;max-height:100%;image-rendering:pixelated;}
+#tray{position:absolute;left:10px;right:10px;bottom:14px;z-index:11;display:none;flex-direction:column;padding:8px;gap:7px;}
+#cats{display:flex;gap:6px;}
+#cats .cat{flex:1;text-align:center;font-size:12px;color:#8a6a4a;padding:5px 0;
+  background:#f0e0c2;border:2px solid #cbb083;border-radius:7px;cursor:pointer;}
+#cats .cat.on{background:#c99a5e;color:#fff;border-color:#3a281d;}
+#items{display:flex;gap:8px;overflow-x:auto;min-height:64px;padding-bottom:2px;}
+#items .item{flex:0 0 auto;width:60px;height:60px;display:flex;align-items:center;justify-content:center;
+  padding:5px;background:#fdf3dc;border:2px solid #cbb083;border-radius:8px;cursor:pointer;overflow:hidden;}
+#items .item.on{border-color:#e0885a;box-shadow:0 0 0 2px #f0c090 inset;}
+#items .item:active{transform:translateY(1px);}
+#items .item img{max-width:100%;max-height:100%;image-rendering:pixelated;}
+#items .item.floor{padding:0;}
+#items .item.floor .sw{width:100%;height:100%;border-radius:6px;image-rendering:pixelated;
+  background-repeat:repeat;background-size:20px 20px;}
 
 /* 底部照料 */
-#care{position:absolute;left:0;right:0;bottom:16px;z-index:10;
-  display:flex;justify-content:center;gap:13px;}
-.cbtn{width:58px;height:58px;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:2px;cursor:pointer;}
+#care{position:absolute;left:0;right:0;bottom:70px;z-index:10;display:flex;justify-content:center;gap:13px;}
+.cbtn{width:58px;height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;}
 .cbtn:active{transform:translate(1px,2px);box-shadow:1px 1px 0 rgba(58,40,29,.28);}

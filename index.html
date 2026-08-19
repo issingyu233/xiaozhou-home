@@ -19,6 +19,12 @@
     <!-- 家具动态插入 -->
     <img id="pet" src="xiaozhou.png" alt="小昼">
     <div id="say"></div>
+    <!-- 选中家具的操作条 -->
+    <div id="selbar">
+      <button class="sb" data-act="flip">翻转</button>
+      <button class="sb" data-act="rot">旋转</button>
+      <button class="sb del" data-act="del">收回</button>
+    </div>
   </div>
 
   <!-- ===== 顶部：需求 + 金币 ===== -->
@@ -30,18 +36,27 @@
   </div>
   <div id="topr">
     <div class="coin panel"><span class="ico" data-ico="coin"></span><span id="coinN">120</span></div>
+    <div class="coin panel"><span class="ico" data-ico="gem"></span><span id="gemN">5</span></div>
   </div>
 
-  <!-- ===== 右侧工具 ===== -->
-  <div id="tools">
-    <button class="tbtn panel" id="btnEdit"><span class="ico" data-ico="hammer"></span><span class="lbl">装修</span></button>
+  <!-- 换房间（低调） -->
+  <div id="roomsel">
+    <span class="arw" id="arwL"><span class="ico" data-ico="arwL"></span></span>
+    <span class="rtag">🛏 卧室</span>
+    <span class="arw" id="arwR"><span class="ico" data-ico="arwR"></span></span>
   </div>
-  <div class="hint panel" id="hint">装修中 · 拖动家具摆放 · 双击家具收回</div>
-  <div id="editbar">
-    <button class="tbtn panel" id="btnFloor"><span class="ico" data-ico="brush"></span><span class="lbl">换地板</span></button>
-    <button class="tbtn panel" id="btnDone"><span class="ico" data-ico="check"></span><span class="lbl">完成</span></button>
+
+  <!-- 右侧：装修 / 商店 / 完成 -->
+  <button class="tbtn panel" id="btnEdit"><span class="ico" data-ico="hammer"></span><span class="lbl">装修</span></button>
+  <button class="tbtn side panel" id="btnShop"><span class="nb">NEW</span><span class="ico" data-ico="cart"></span><span class="lbl">商店</span></button>
+  <button class="tbtn panel" id="btnDone"><span class="ico" data-ico="check"></span><span class="lbl">完成</span></button>
+  <div class="hint panel" id="hint">拖动家具或小昼摆放 · 点一下家具可翻转/旋转</div>
+
+  <!-- 装修托盘：分类 + 内容 -->
+  <div id="tray" class="panel">
+    <div id="cats"></div>
+    <div id="items"></div>
   </div>
-  <div id="tray" class="panel"></div>
 
   <!-- ===== 底部照料 ===== -->
   <div id="care">
@@ -49,6 +64,14 @@
     <button class="cbtn panel" data-care="food"><span class="ico" data-ico="apple"></span><span class="lbl">喂食</span></button>
     <button class="cbtn panel" data-care="clean"><span class="ico" data-ico="drop"></span><span class="lbl">洗澡</span></button>
     <button class="cbtn panel" data-care="energy"><span class="ico" data-ico="moon"></span><span class="lbl">哄睡</span></button>
+  </div>
+
+  <!-- ===== 底部导航 ===== -->
+  <div id="nav">
+    <div class="n on" data-nav="home"><span class="ico" data-ico="home"></span>家</div>
+    <div class="n" data-nav="mood"><span class="ico" data-ico="cal"></span>心情</div>
+    <div class="n" data-nav="closet"><span class="ico" data-ico="hanger"></span>衣柜</div>
+    <div class="n" data-nav="me"><span class="ico" data-ico="person"></span>我的</div>
   </div>
 </div>
 <script src="game.js"></script>
