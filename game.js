@@ -177,6 +177,8 @@ function setEdit(on){
   document.getElementById('btnShop').style.display=on?'none':'flex';
   document.getElementById('roomsel').style.display=on?'none':'flex';
   document.getElementById('nav').style.display=on?'none':'flex';
+  document.getElementById('needs').style.display=on?'none':'flex';
+  document.getElementById('topr').style.display=on?'none':'flex';
   if(!on){ selectFurn(null); petEl.classList.remove('sel'); hideSelbar(); }
   else { renderCats(); renderTray(); }
 }

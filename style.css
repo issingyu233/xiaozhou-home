@@ -52,12 +52,12 @@ svg{display:block;shape-rendering:crispEdges;}
 .lbl{font-size:10px;color:#6a4a30;}
 
 /* 顶部需求 */
-#needs{position:absolute;top:12px;left:10px;z-index:10;display:flex;gap:5px;}
-.need{display:flex;align-items:center;gap:3px;padding:4px 5px 4px 4px;}
-.need .bar{width:20px;height:8px;border:2px solid #3a281d;border-radius:5px;overflow:hidden;background:#eaddc0;}
+#needs{position:absolute;top:12px;left:12px;z-index:10;display:flex;gap:9px;padding:7px 11px;align-items:center;}
+.need{display:flex;align-items:center;gap:4px;}
+.need .bar{width:26px;height:8px;border:2px solid #3a281d;border-radius:5px;overflow:hidden;background:#eaddc0;}
 .need .bar i{display:block;height:100%;width:70%;transition:width .3s,background .3s;}
-#topr{position:absolute;top:12px;right:10px;z-index:10;display:flex;gap:5px;}
-.coin{display:flex;align-items:center;gap:3px;padding:5px 7px 5px 5px;font-size:12px;color:#7a4f2e;}
+#topr{position:absolute;top:12px;right:12px;z-index:10;display:flex;gap:12px;padding:7px 13px;align-items:center;}
+.res{display:flex;align-items:center;gap:5px;font-size:13px;color:#7a4f2e;}
 
 /* 右侧按钮：装修 / 完成 / 商店 */
 #btnEdit,#btnDone,#btnShop{position:absolute;right:12px;z-index:11;width:52px;height:52px;
