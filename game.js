@@ -83,6 +83,13 @@ const CATALOG=[
 const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
 const STARTER_OWNED=CATALOG.filter(c=>c.price===0).map(c=>c.id);
 
+/* 房间 */
+const ROOMS=[
+  {key:'bedroom',name:'卧室',icon:'🛏',wall:'cc_wall.png'},
+  {key:'living', name:'客厅',icon:'🛋',wall:'cc_wall2.png'},
+];
+const ROOMMAP=Object.fromEntries(ROOMS.map(r=>[r.key,r]));
+
 /* ---------- 存档 ---------- */
 const KEY='xiaozhou_home_v5';
 let fresh=false;
@@ -90,41 +97,63 @@ let S=load();
 function load(){
   try{const r=localStorage.getItem(KEY); if(r) return JSON.parse(r);}catch(e){}
   fresh=true;
-  return { floor:0, coins:200, gems:5, owned:STARTER_OWNED.slice(), placed:[], pet:null, needs:{mood:70,food:60,clean:80,energy:75} };
+  return { room:'bedroom', rooms:{}, coins:200, gems:5, owned:STARTER_OWNED.slice(), needs:{mood:70,food:60,clean:80,energy:75} };
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
-// 兼容旧存档：补上 owned（保留已摆放的家具）
-if(!S.owned){ S.owned=[...new Set([...STARTER_OWNED, ...S.placed.map(p=>p.id)])]; }
+// 兼容旧存档
+if(!S.owned){ S.owned=[...new Set([...STARTER_OWNED, ...((S.placed||[]).map(p=>p.id))])]; }
 if(S.gems==null) S.gems=5;
+if(!S.rooms){ S.rooms={ bedroom:{floor:S.floor||0, placed:S.placed||[], pet:S.pet||null} }; delete S.floor; delete S.placed; delete S.pet; }
+if(!S.room) S.room='bedroom';
 
 const room=document.getElementById('room');
 const floorEl=document.getElementById('floor');
 const petEl=document.getElementById('pet');
 const sayEl=document.getElementById('say');
 const selbar=document.getElementById('selbar');
+const wallEl=document.getElementById('wall');
 let edit=false, selected=null;
 
+/* 当前房间 */
+function cur(){ if(!S.rooms[S.room]) S.rooms[S.room]=initRoom(S.room); return S.rooms[S.room]; }
 function applyFloor(){
-  floorEl.style.background=`url('${FLOORS[S.floor].img}') repeat`;
+  floorEl.style.background=`url('${FLOORS[cur().floor].img}') repeat`;
   floorEl.style.backgroundSize='40px 40px';
 }
+function applyRoom(){
+  const rm=ROOMMAP[S.room];
+  wallEl.style.background=`url('${rm.wall}') repeat`; wallEl.style.backgroundSize='27px auto';
+  applyFloor();
+  const tag=document.getElementById('roomName'); if(tag) tag.textContent=rm.icon+' '+rm.name;
+}
+function switchRoom(d){ if(edit) return;
+  const i=ROOMS.findIndex(r=>r.key===S.room); S.room=ROOMS[(i+d+ROOMS.length)%ROOMS.length].key; save();
+  hideSelbar(); applyRoom(); renderPlaced(); placePet(); bubble('来到'+ROOMMAP[S.room].name+'~');
+}
 
-/* 开局样板间 */
-function starterLayout(cw,ch){
-  const put=(id,cx,cy)=>{ const c=CATMAP[id];
-    return {id, x:Math.round(cx*cw-c.w/2), y:Math.round(cy*ch-c.h/2), f:0, r:0}; };
-  return [
-    put('rug',0.50,0.64), put('bed',0.74,0.50), put('nightstand',0.47,0.52),
-    put('lamp',0.47,0.44), put('bookshelf',0.15,0.52), put('plant',0.90,0.64),
-    put('window',0.34,0.16), put('picture',0.12,0.17),
-  ];
+/* 开局布置 */
+function put(id,cx,cy,cw,ch){ const c=CATMAP[id]; return {id, x:Math.round(cx*cw-c.w/2), y:Math.round(cy*ch-c.h/2), f:0, r:0, dir:0}; }
+function bedroomStarter(cw,ch){ return [
+  put('rug',0.50,0.64,cw,ch), put('bed',0.74,0.50,cw,ch), put('nightstand',0.47,0.52,cw,ch),
+  put('lamp',0.47,0.44,cw,ch), put('bookshelf',0.15,0.52,cw,ch), put('plant',0.90,0.64,cw,ch),
+  put('window',0.34,0.16,cw,ch), put('picture',0.12,0.17,cw,ch),
+]; }
+function livingStarter(cw,ch){ return [
+  put('rug_orange',0.50,0.66,cw,ch), put('sofa_green',0.34,0.46,cw,ch), put('coffee',0.50,0.60,cw,ch),
+  put('armchair',0.80,0.52,cw,ch), put('fireplace',0.14,0.20,cw,ch), put('plant',0.90,0.72,cw,ch),
+]; }
+function initRoom(key){
+  const cw=room.clientWidth, ch=room.clientHeight;
+  if(key==='living'){ ['sofa_green','coffee','rug_orange','armchair','fireplace'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
+    return {floor:0, placed:livingStarter(cw,ch), pet:petDefault(cw,ch)}; }
+  return {floor:0, placed:bedroomStarter(cw,ch), pet:petDefault(cw,ch)};
 }
 function petDefault(cw,ch){ return {x:Math.round(cw/2-48), y:Math.round(ch*0.58)}; }
 
 /* ---------- 家具渲染 ---------- */
 function renderPlaced(){
   document.querySelectorAll('.furn').forEach(e=>e.remove());
-  S.placed.forEach((it,idx)=>{
+  cur().placed.forEach((it,idx)=>{
     const c=CATMAP[it.id]; if(!c) return;
     let img=c.img,w=c.w,h=c.h,rot=it.r||0;
     if(c.dirs){ const d=c.dirs[(it.dir||0)%c.dirs.length]; img=d.img; w=d.w; h=d.h; rot=0; } // 多方向:换朝向贴图
@@ -154,8 +183,8 @@ function makeDraggable(el,kind){
       nx=Math.max(0,Math.min(room.clientWidth-el.offsetWidth,nx));
       ny=Math.max(room.clientHeight*0.05,Math.min(room.clientHeight-el.offsetHeight-14,ny));
       el.style.left=nx+'px'; el.style.top=ny+'px';
-      if(kind==='furn'){ S.placed[el.dataset.idx].x=nx; S.placed[el.dataset.idx].y=ny; showSelbarFor(el); }
-      else { S.pet={x:nx,y:ny}; positionSay(); }
+      if(kind==='furn'){ cur().placed[el.dataset.idx].x=nx; cur().placed[el.dataset.idx].y=ny; showSelbarFor(el); }
+      else { cur().pet={x:nx,y:ny}; positionSay(); }
       save();
     };
     el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
@@ -172,7 +201,7 @@ function selectPet(){ document.querySelectorAll('.furn').forEach(e=>e.classList.
 /* 选中操作条 */
 function showSelbarFor(el){
   const idx=+el.dataset.idx;
-  const it=S.placed[idx]; const c=CATMAP[it.id];
+  const it=cur().placed[idx]; const c=CATMAP[it.id];
   // 只有有多方向素材的家具才显示"旋转"
   const rotBtn=selbar.querySelector('[data-act="rot"]');
   rotBtn.style.display=(c&&c.dirs)?'':'none';
@@ -184,14 +213,14 @@ function showSelbarFor(el){
 function hideSelbar(){ selbar.style.display='none'; }
 selbar.querySelectorAll('.sb').forEach(b=>{
   b.onclick=()=>{
-    const idx=+selbar.dataset.idx; const it=S.placed[idx]; if(!it) return;
+    const idx=+selbar.dataset.idx; const it=cur().placed[idx]; if(!it) return;
     if(b.dataset.act==='flip') it.f=it.f?0:1;
     else if(b.dataset.act==='rot'){ const c=CATMAP[it.id];
       if(c&&c.dirs){ const od=c.dirs[(it.dir||0)%c.dirs.length]; const cx=it.x+od.w/2, cy=it.y+od.h/2;
         it.dir=((it.dir||0)+1)%c.dirs.length; const nd=c.dirs[it.dir];
         it.x=Math.round(cx-nd.w/2); it.y=Math.round(cy-nd.h/2); } // 换向保持中心不动
       else it.r=((it.r||0)+90)%360; }
-    else if(b.dataset.act==='del'){ S.placed.splice(idx,1); save(); hideSelbar(); selectFurn(null); renderPlaced(); return; }
+    else if(b.dataset.act==='del'){ cur().placed.splice(idx,1); save(); hideSelbar(); selectFurn(null); renderPlaced(); return; }
     save(); renderPlaced();
     const nel=document.querySelector(`.furn[data-idx="${idx}"]`);
     if(nel){ selectFurn(nel); showSelbarFor(nel); }
@@ -243,8 +272,8 @@ function buy(id){
   S.coins-=c.price; S.owned.push(id); save(); renderShop(); renderNeeds();
   shopMsg('买到「'+c.name+'」啦！进装修就能摆上~');
 }
-document.getElementById('arwL').onclick=()=>bubble('厨房·浴室 之后解锁哦~');
-document.getElementById('arwR').onclick=()=>bubble('厨房·浴室 之后解锁哦~');
+document.getElementById('arwL').onclick=()=>switchRoom(-1);
+document.getElementById('arwR').onclick=()=>switchRoom(1);
 document.querySelectorAll('#nav .n').forEach(n=>{ n.onclick=()=>{
   if(n.dataset.nav==='home') return;
   const txt={mood:'心情日历 之后做~',closet:'衣柜换装 之后做~',me:'个人页 之后做~'};
@@ -260,18 +289,18 @@ function renderCats(){
 function renderTray(){
   const box=document.getElementById('items'); box.innerHTML='';
   if(curCat==='floor'){
-    FLOORS.forEach((fl,i)=>{ const it=document.createElement('div'); it.className='item floor'+(i===S.floor?' on':'');
+    FLOORS.forEach((fl,i)=>{ const it=document.createElement('div'); it.className='item floor'+(i===cur().floor?' on':'');
       const sw=document.createElement('div'); sw.className='sw'; sw.style.background=`url('${fl.img}') repeat`; sw.style.backgroundSize='20px 20px';
       it.appendChild(sw); it.title=fl.name;
-      it.onclick=()=>{ S.floor=i; applyFloor(); save(); renderTray(); bubble('换地板咯~'); };
+      it.onclick=()=>{ cur().floor=i; applyFloor(); save(); renderTray(); bubble('换地板咯~'); };
       box.appendChild(it); });
   } else {
     const list=CATALOG.filter(c=>c.cat===curCat && S.owned.includes(c.id));
     if(!list.length){ const e=document.createElement('div'); e.style.cssText='color:#a58a5a;font-size:11px;padding:14px 8px;'; e.textContent='这类还没有家具，去商店买几件吧~'; box.appendChild(e); }
     list.forEach(c=>{ const it=document.createElement('div'); it.className='item';
       const img=document.createElement('img'); img.src=c.img; it.appendChild(img); it.title=c.name;
-      it.onclick=()=>{ S.placed.push({id:c.id,
-        x:Math.round((room.clientWidth-c.w)/2/CELL)*CELL, y:Math.round(room.clientHeight*0.42/CELL)*CELL, f:0,r:0});
+      it.onclick=()=>{ cur().placed.push({id:c.id,
+        x:Math.round((room.clientWidth-c.w)/2/CELL)*CELL, y:Math.round(room.clientHeight*0.42/CELL)*CELL, f:0,r:0,dir:0});
         save(); renderPlaced(); bubble('放好啦，拖我摆位置~'); };
       box.appendChild(it); });
   }
@@ -304,8 +333,8 @@ petEl.addEventListener('click',e=>{ if(edit) return; S.needs.mood=Math.min(100,S
 
 /* ---------- 角色定位 ---------- */
 function placePet(){
-  if(!S.pet) S.pet=petDefault(room.clientWidth,room.clientHeight);
-  petEl.style.left=S.pet.x+'px'; petEl.style.top=S.pet.y+'px';
+  if(!cur().pet) cur().pet=petDefault(room.clientWidth,room.clientHeight);
+  petEl.style.left=cur().pet.x+'px'; petEl.style.top=cur().pet.y+'px';
   positionSay();
 }
 function positionSay(){ sayEl.style.left=(parseInt(petEl.style.left)+petEl.offsetWidth/2)+'px';
@@ -321,8 +350,9 @@ setInterval(()=>{ for(const k in S.needs) S.needs[k]=Math.max(0,S.needs[k]-1); s
 
 /* ---------- 启动 ---------- */
 paintIcons();
-applyFloor();
-if(fresh){ S.placed=starterLayout(room.clientWidth,room.clientHeight); S.pet=petDefault(room.clientWidth,room.clientHeight); save(); }
+cur();          // 确保当前房间已初始化
+applyRoom();
+save();
 renderPlaced();
 makeDraggable(petEl,'pet');
 placePet();
