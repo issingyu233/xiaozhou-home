@@ -49,7 +49,8 @@ const CATS=[{key:'furn',name:'家具'},{key:'deco',name:'装饰'},{key:'floor',n
 // 家具目录：cat=分类, flat=地毯(压底), price=0 为开局自带, >0 需在商店购买
 const CATALOG=[
   // —— 开局自带 ——
-  {id:'bed',      name:'蓝床',  cat:'furn', img:'cc_bed.png',        w:72, h:106, price:0},
+  {id:'bed',      name:'蓝床',  cat:'furn', img:'cc_bed.png',        w:72, h:106, price:0,
+    dirs:[{img:'cc_bed.png',w:72,h:106},{img:'cc_bed_h.png',w:104,h:72}]},
   {id:'nightstand',name:'床头柜',cat:'furn',img:'cc_nightstand.png', w:70, h:58,  price:0},
   {id:'lamp',     name:'台灯',  cat:'furn', img:'cc_lamp.png',       w:34, h:78,  price:0},
   {id:'bookshelf',name:'书架',  cat:'furn', img:'cc_bookshelf.png',  w:98, h:110, price:0},
@@ -61,14 +62,17 @@ const CATALOG=[
   {id:'dresser',  name:'抽屉柜',cat:'furn', img:'cc_dresser.png',    w:84, h:112, price:50},
   {id:'wardrobe', name:'衣柜',  cat:'furn', img:'cc_wardrobe.png',   w:40, h:104, price:45},
   {id:'chair',    name:'木椅',  cat:'furn', img:'cc_chair.png',      w:40, h:98,  price:25},
-  {id:'bed_green',name:'绿床',  cat:'furn', img:'cc_bed_green.png',  w:72, h:106, price:65},
-  {id:'bed_wood', name:'原木床',cat:'furn', img:'cc_bed_wood.png',   w:72, h:106, price:65},
+  {id:'bed_green',name:'绿床',  cat:'furn', img:'cc_bed_green.png',  w:72, h:106, price:65,
+    dirs:[{img:'cc_bed_green.png',w:72,h:106},{img:'cc_bed_green_h.png',w:104,h:72}]},
+  {id:'bed_wood', name:'原木床',cat:'furn', img:'cc_bed_wood.png',   w:72, h:106, price:65,
+    dirs:[{img:'cc_bed_wood.png',w:72,h:106},{img:'cc_bed_wood_h.png',w:104,h:72}]},
+  // dirs 顺时针:前(下) → 右 → 后(上) → 左
   {id:'sofa_green',name:'绿沙发',cat:'furn',price:60,img:'cc_sofa_green_0.png',w:92,h:69,
-    dirs:[{img:'cc_sofa_green_0.png',w:92,h:69},{img:'cc_sofa_green_1.png',w:51,h:106},{img:'cc_sofa_green_2.png',w:92,h:51},{img:'cc_sofa_green_3.png',w:51,h:106}]},
+    dirs:[{img:'cc_sofa_green_0.png',w:92,h:69},{img:'cc_sofa_green_3.png',w:51,h:106},{img:'cc_sofa_green_2.png',w:92,h:51},{img:'cc_sofa_green_1.png',w:51,h:106}]},
   {id:'sofa_brown',name:'棕沙发',cat:'furn',price:60,img:'cc_sofa_brown_0.png',w:92,h:69,
-    dirs:[{img:'cc_sofa_brown_0.png',w:92,h:69},{img:'cc_sofa_brown_1.png',w:51,h:106},{img:'cc_sofa_brown_2.png',w:92,h:51},{img:'cc_sofa_brown_3.png',w:51,h:106}]},
+    dirs:[{img:'cc_sofa_brown_0.png',w:92,h:69},{img:'cc_sofa_brown_3.png',w:51,h:106},{img:'cc_sofa_brown_2.png',w:92,h:51},{img:'cc_sofa_brown_1.png',w:51,h:106}]},
   {id:'armchair', name:'单人沙发',cat:'furn',price:40,img:'cc_armchair_0.png',w:55,h:69,
-    dirs:[{img:'cc_armchair_0.png',w:55,h:69},{img:'cc_armchair_1.png',w:51,h:69},{img:'cc_armchair_2.png',w:55,h:51},{img:'cc_armchair_3.png',w:51,h:69}]},
+    dirs:[{img:'cc_armchair_0.png',w:55,h:69},{img:'cc_armchair_3.png',w:51,h:69},{img:'cc_armchair_2.png',w:55,h:51},{img:'cc_armchair_1.png',w:51,h:69}]},
   {id:'table',    name:'餐桌',  cat:'furn', img:'cc_table.png',      w:100,h:64,  price:50},
   {id:'coffee',   name:'茶几',  cat:'furn', img:'cc_coffee.png',     w:100,h:64,  price:45},
   {id:'roundtable',name:'圆桌', cat:'furn', img:'cc_roundtable.png', w:76, h:71,  price:40},
@@ -182,7 +186,11 @@ selbar.querySelectorAll('.sb').forEach(b=>{
   b.onclick=()=>{
     const idx=+selbar.dataset.idx; const it=S.placed[idx]; if(!it) return;
     if(b.dataset.act==='flip') it.f=it.f?0:1;
-    else if(b.dataset.act==='rot'){ const c=CATMAP[it.id]; if(c&&c.dirs) it.dir=((it.dir||0)+1)%c.dirs.length; else it.r=((it.r||0)+90)%360; }
+    else if(b.dataset.act==='rot'){ const c=CATMAP[it.id];
+      if(c&&c.dirs){ const od=c.dirs[(it.dir||0)%c.dirs.length]; const cx=it.x+od.w/2, cy=it.y+od.h/2;
+        it.dir=((it.dir||0)+1)%c.dirs.length; const nd=c.dirs[it.dir];
+        it.x=Math.round(cx-nd.w/2); it.y=Math.round(cy-nd.h/2); } // 换向保持中心不动
+      else it.r=((it.r||0)+90)%360; }
     else if(b.dataset.act==='del'){ S.placed.splice(idx,1); save(); hideSelbar(); selectFurn(null); renderPlaced(); return; }
     save(); renderPlaced();
     const nel=document.querySelector(`.furn[data-idx="${idx}"]`);
