@@ -79,6 +79,20 @@ const CATALOG=[
   {id:'clothtable',name:'布艺桌',cat:'furn',img:'cc_clothtable.png', w:80, h:71,  price:55},
   {id:'fireplace',name:'壁炉',  cat:'deco', img:'cc_fireplace.png',  w:70, h:92,  price:80},
   {id:'rug_orange',name:'橙地毯',cat:'deco', img:'cc_rug_orange.png',w:130,h:82,  price:30, flat:true},
+  // —— 追加一批 ——
+  {id:'bed_cream',name:'米床',  cat:'furn', img:'cc_bed_cream.png', w:72, h:106, price:65,
+    dirs:[{img:'cc_bed_cream.png',w:72,h:106},{img:'cc_bed_cream_h.png',w:104,h:72}]},
+  {id:'cabinet',  name:'高柜',  cat:'furn', img:'cc_cabinet.png',   w:40, h:104, price:45},
+  {id:'shelf2',   name:'置物架',cat:'furn', img:'cc_shelf2.png',    w:92, h:104, price:50},
+  {id:'dtable',   name:'方桌',  cat:'furn', img:'cc_dtable.png',    w:76, h:71,  price:40},
+  {id:'floorlamp',name:'落地灯',cat:'furn', img:'cc_floorlamp.png', w:34, h:78,  price:35},
+  {id:'toilet',   name:'马桶',  cat:'furn', img:'cc_toilet.png',    w:34, h:88,  price:30},
+  {id:'mirror',   name:'穿衣镜',cat:'deco', img:'cc_mirror.png',    w:30, h:75,  price:35},
+  {id:'picture2', name:'相框',  cat:'deco', img:'cc_picture2.png',  w:30, h:52,  price:20},
+  {id:'window2',  name:'木窗',  cat:'deco', img:'cc_window2.png',   w:67, h:43,  price:30},
+  {id:'bathmat',  name:'地垫',  cat:'deco', img:'cc_bathmat.png',   w:40, h:46,  price:15, flat:true},
+  {id:'rug_blue', name:'蓝地毯',cat:'deco', img:'cc_rug_blue.png',  w:100,h:50,  price:30, flat:true},
+  {id:'rug_green',name:'绿地毯',cat:'deco', img:'cc_rug_green.png', w:100,h:50,  price:30, flat:true},
 ];
 const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
 const STARTER_OWNED=CATALOG.filter(c=>c.price===0).map(c=>c.id);
@@ -140,7 +154,7 @@ function bedroomStarter(cw,ch){ return [
 ]; }
 function livingStarter(cw,ch){ return [
   put('rug_orange',0.50,0.66,cw,ch), put('sofa_green',0.34,0.46,cw,ch), put('coffee',0.50,0.60,cw,ch),
-  put('armchair',0.80,0.52,cw,ch), put('fireplace',0.14,0.20,cw,ch), put('plant',0.90,0.72,cw,ch),
+  put('armchair',0.80,0.52,cw,ch), put('fireplace',0.16,0.40,cw,ch), put('plant',0.90,0.72,cw,ch),
 ]; }
 function initRoom(key){
   const cw=room.clientWidth, ch=room.clientHeight;
