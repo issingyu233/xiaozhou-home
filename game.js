@@ -16,6 +16,7 @@ const ICONS = {
   home:{p:{R:'#d0785a',D:'#8a5a34'},g:['..R..','.RRR.','RRRRR','DD.DD','DD.DD']},
   cal:{p:{R:'#e0557a',W:'#fff',D:'#8a6a4a'},g:['R.R','WWW','WDW','WWW','WDW']},
   hanger:{p:{D:'#8a6a4a'},g:['..D..','.D.D.','D...D','DDDDD','.....']},
+  book:{p:{B:'#b57a42',W:'#fff3d8',R:'#d76a5a'},g:['BWWWB','BWWWB','BWRWB','BWWWB','BBBBB']},
   person:{p:{B:'#7a5ec8',H:'#f6dcd2'},g:['.HH.','.HH.','BBBB','BBBB','B..B']},
   arwL:{p:{D:'#7a5a3a'},g:['..D','.D.','D..','.D.','..D']},
   arwR:{p:{D:'#7a5a3a'},g:['D..','.D.','..D','.D.','D..']},
@@ -366,7 +367,7 @@ function renderMood(){
     const editable=cd.getTime()<=today0.getTime();
     const cell=document.createElement('div');
     cell.className='mcell'+(rec?' has':' blank')+(isToday?' today':'')+(editable?' pick':'');
-    if(rec){ cell.innerHTML=moodFace(rec.v,26)+'<span class="dn">'+day+'</span>';
+    if(rec){ cell.innerHTML=moodFace(rec.v,26)+'<span class="dn">'+day+'</span>'+(rec.note?'<span class="ndot"></span>':'');
       cell.style.background=MOOD_META[rec.v].pale; cell.style.borderColor=MOOD_META[rec.v].col;
       sum+=rec.v; cnt++; }
     else { cell.innerHTML='<span class="dn">'+day+'</span>'; }
@@ -375,37 +376,45 @@ function renderMood(){
   }
   const avg=cnt?Math.round(sum/cnt):2;
   document.getElementById('moodFoot').innerHTML=
-    '本月记录 '+cnt+' 天 · 连续陪伴 '+moodStreak()+' 天<br>平均心情：'+MOOD_META[avg].name+'（点任意日期即可记录当天心情）';
+    '本月记录 '+cnt+' 天 · 连续陪伴 '+moodStreak()+' 天<br>平均心情：'+MOOD_META[avg].name+'（点任意日期写心情和日记）';
 }
 
-/* ---------- 心情选择器（点一下就选） ---------- */
-let pickEl=null, pickKey=null;
+/* ---------- 日记编辑器（选心情 + 写一句话） ---------- */
+let pickEl=null, pickKey=null, pickV=2, pickToday=false;
 function buildPicker(){
   pickEl=document.createElement('div'); pickEl.id='moodPick';
   pickEl.innerHTML='<div class="pkcard">'
     +'<div class="pkttl"><span id="pkDate"></span><button id="pkClose">✕</button></div>'
+    +'<div class="pklab">今天心情</div>'
     +'<div class="pkrow"></div>'
-    +'<button id="pkClear">清除这天</button></div>';
+    +'<div class="pklab">写点什么</div>'
+    +'<textarea id="pkNote" maxlength="140" placeholder="今天和小昼发生了什么呀…"></textarea>'
+    +'<div class="pkbtns"><button id="pkClear">清除这天</button><button id="pkSave">保存</button></div>'
+    +'</div>';
   document.querySelector('.mbox').appendChild(pickEl);
   const row=pickEl.querySelector('.pkrow');
   MOOD_META.forEach((m,i)=>{ const b=document.createElement('div'); b.className='pkface';
-    b.innerHTML=moodFace(i,44)+'<span>'+m.name+'</span>';
-    b.onclick=()=>{ S.moods[pickKey]={v:i,m:true}; save(); closePicker(); renderMood();
-      if(pickKey===todayKey()) bubble('今天心情：'+m.name+'~'); };
+    b.innerHTML=moodFace(i,42)+'<span>'+m.name+'</span>';
+    b.onclick=()=>{ pickV=i; pickEl.querySelectorAll('.pkface').forEach((f,j)=>f.classList.toggle('on',j===i)); };
     row.appendChild(b); });
   pickEl.querySelector('#pkClose').onclick=closePicker;
   pickEl.addEventListener('click',e=>{ if(e.target===pickEl) closePicker(); });
-  pickEl.querySelector('#pkClear').onclick=()=>{ if(pickKey!==todayKey()){ delete S.moods[pickKey]; }
+  pickEl.querySelector('#pkSave').onclick=()=>{ const note=pickEl.querySelector('#pkNote').value.trim();
+    S.moods[pickKey]={v:pickV, m:true, note:note}; save(); closePicker(); renderMood();
+    if(pickToday) bubble(note?'今天的日记记好啦~':'今天心情：'+MOOD_META[pickV].name+'~'); };
+  pickEl.querySelector('#pkClear').onclick=()=>{ if(!pickToday){ delete S.moods[pickKey]; }
     else { S.moods[pickKey]={v:computeMoodLevel(),m:false}; }
     save(); closePicker(); renderMood(); };
 }
 function openPicker(key,label,isToday){
   if(!pickEl) buildPicker();
-  pickKey=key;
-  pickEl.querySelector('#pkDate').textContent='选择「'+label+'」的心情';
-  pickEl.querySelector('#pkClear').textContent=isToday?'恢复自动心情':'清除这天';
-  const cur=(S.moods[key]&&S.moods[key].v);
-  pickEl.querySelectorAll('.pkface').forEach((f,i)=>f.classList.toggle('on',i===cur));
+  pickKey=key; pickToday=isToday;
+  const rec=S.moods[key];
+  pickV=rec?rec.v:computeMoodLevel();
+  pickEl.querySelector('#pkDate').textContent=label;
+  pickEl.querySelector('#pkNote').value=(rec&&rec.note)||'';
+  pickEl.querySelector('#pkClear').textContent=isToday?'恢复自动':'清除这天';
+  pickEl.querySelectorAll('.pkface').forEach((f,i)=>f.classList.toggle('on',i===pickV));
   pickEl.style.display='flex';
 }
 function closePicker(){ if(pickEl) pickEl.style.display='none'; }
