@@ -38,27 +38,26 @@ function paintIcons(){
 
 /* ---------- 心情表情（像素脸） ---------- */
 const MOOD_META=[
-  {name:'难过',  col:'#86a6c4'},
-  {name:'低落',  col:'#9fb59b'},
-  {name:'一般',  col:'#ecc770'},
-  {name:'开心',  col:'#f0a35e'},
-  {name:'超开心',col:'#ef8878'},
+  {name:'难过',  col:'#86a6c4', pale:'#dce7f1'},
+  {name:'低落',  col:'#9fb59b', pale:'#e3ebdf'},
+  {name:'一般',  col:'#e6b850', pale:'#f6ead0'},
+  {name:'开心',  col:'#f0a35e', pale:'#f9e2cd'},
+  {name:'超开心',col:'#ef8878', pale:'#f9dcd6'},
 ];
-// 7x7 脸谱：F=脸 E=眼 M=嘴 C=腮红
-const MOOD_FACE=[
-  [".FFFFF.","FFFFFFF","FEFFFEF","FFFFFFF","FFMMMFF",".FMFMF.",".FFFFF."], //0 难过
-  [".FFFFF.","FFFFFFF","FEFFFEF","FFFFFFF","FFFMFFF",".FMFMF.",".FFFFF."], //1 低落
-  [".FFFFF.","FFFFFFF","FEFFFEF","FFFFFFF","FFFFFFF",".FMMMF.",".FFFFF."], //2 一般
-  [".FFFFF.","FFFFFFF","FEFFFEF","FFFFFFF","FFMFMFF",".FFMFF.",".FFFFF."], //3 开心
-  [".FFFFF.","FFFFFFF","FEFFFEF","FCFFFCF","FFMMMFF",".FMMMF.",".FFFFF."], //4 超开心
+// 暖色可爱表情（矢量），每张脸的五官（眼/嘴/腮红/眼泪/闪光）
+const MOOD_SVG=[
+  /*0 难过*/`<path d="M6.8 9.5 L10 8.4" stroke="#5a4636" stroke-width=".9" stroke-linecap="round"/><path d="M17.2 9.5 L14 8.4" stroke="#5a4636" stroke-width=".9" stroke-linecap="round"/><circle cx="8.6" cy="11.2" r="1.25" fill="#5a4636"/><circle cx="15.4" cy="11.2" r="1.25" fill="#5a4636"/><path d="M9 16.4 Q12 14 15 16.4" fill="none" stroke="#7a4a3a" stroke-width="1.2" stroke-linecap="round"/><path d="M16.1 12.6 q1 1.6 0 2.6 q-1 -1 0 -2.6 z" fill="#7fb8e6"/>`,
+  /*1 低落*/`<path d="M7.3 11 h2.4" stroke="#5a4636" stroke-width="1.35" stroke-linecap="round"/><path d="M14.3 11 h2.4" stroke="#5a4636" stroke-width="1.35" stroke-linecap="round"/><path d="M9.8 15.7 Q12 14.4 14.2 15.7" fill="none" stroke="#7a4a3a" stroke-width="1.1" stroke-linecap="round"/>`,
+  /*2 一般*/`<circle cx="8.6" cy="11.2" r="1.3" fill="#5a4636"/><circle cx="15.4" cy="11.2" r="1.3" fill="#5a4636"/><path d="M9.6 15.3 h4.8" stroke="#7a4a3a" stroke-width="1.2" stroke-linecap="round"/>`,
+  /*3 开心*/`<circle cx="6.7" cy="13.5" r="1.5" fill="#f5a89e" opacity=".8"/><circle cx="17.3" cy="13.5" r="1.5" fill="#f5a89e" opacity=".8"/><circle cx="8.6" cy="11.1" r="1.3" fill="#5a4636"/><circle cx="15.4" cy="11.1" r="1.3" fill="#5a4636"/><path d="M8.6 14.2 Q12 18 15.4 14.2" fill="none" stroke="#7a4a3a" stroke-width="1.3" stroke-linecap="round"/>`,
+  /*4 超开心*/`<circle cx="6.4" cy="13.6" r="1.9" fill="#f5a89e" opacity=".85"/><circle cx="17.6" cy="13.6" r="1.9" fill="#f5a89e" opacity=".85"/><path d="M6.9 11.7 Q8.6 9.6 10.3 11.7" fill="none" stroke="#5a4636" stroke-width="1.25" stroke-linecap="round"/><path d="M13.7 11.7 Q15.4 9.6 17.1 11.7" fill="none" stroke="#5a4636" stroke-width="1.25" stroke-linecap="round"/><path d="M8.4 14 Q12 18.8 15.6 14 Z" fill="#b95f50"/><path d="M10.3 16.4 Q12 18 13.7 16.4 Z" fill="#f0a0a0"/><circle cx="4.5" cy="6.2" r=".85" fill="#f8d98f"/><circle cx="19.5" cy="6.2" r=".85" fill="#f8d98f"/>`,
 ];
 function moodFace(level,px){
-  const g=MOOD_FACE[level]; if(!g) return '';
-  const pal={F:MOOD_META[level].col,E:'#4a3226',M:'#4a3226',C:'#f0a0b0'};
-  const h=g.length,w=g[0].length; let r='';
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const ch=g[y][x];const c=pal[ch];if(!c||ch==='.')continue;
-    r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`;}
-  return `<svg viewBox="0 0 ${w} ${h}" width="${px}" height="${px}">${r}</svg>`;
+  const m=MOOD_META[level]; if(!m) return '';
+  return `<svg viewBox="0 0 24 24" width="${px}" height="${px}" style="display:block;shape-rendering:geometricPrecision">`
+    +`<circle cx="12" cy="12" r="11" fill="${m.pale}"/>`
+    +`<circle cx="12" cy="12" r="9" fill="#fff2d8" stroke="#e7c99b" stroke-width="1"/>`
+    +MOOD_SVG[level]+`</svg>`;
 }
 
 /* ---------- 数据 ---------- */
@@ -342,7 +341,7 @@ let moodView=null; // {y, m(0-11)}
 function thisMonth(){ const d=new Date(); return {y:d.getFullYear(), m:d.getMonth()}; }
 function openMood(){ if(edit) setEdit(false); recordTodayMood(); save();
   moodView=thisMonth(); setNav('mood'); moodPage.style.display='flex'; renderMood(); }
-function closeMood(){ moodPage.style.display='none'; }
+function closeMood(){ closePicker(); moodPage.style.display='none'; }
 document.getElementById('moodClose').onclick=()=>{ closeMood(); setNav('home'); };
 document.getElementById('moodPrev').onclick=()=>{ moodView.m--; if(moodView.m<0){moodView.m=11;moodView.y--;} renderMood(); };
 document.getElementById('moodNext').onclick=()=>{ const t=thisMonth();
@@ -358,24 +357,58 @@ function renderMood(){
   const lead=(first.getDay()+6)%7;               // 周一为首列
   const days=new Date(moodView.y,moodView.m+1,1); days.setDate(0); const total=days.getDate();
   const tk=todayKey();
+  const today0=new Date(); today0.setHours(0,0,0,0);
   for(let i=0;i<lead;i++){ const b=document.createElement('div'); b.className='mcell empty'; grid.appendChild(b); }
   let sum=0,cnt=0;
   for(let day=1;day<=total;day++){
-    const k=dateKey(new Date(moodView.y,moodView.m,day));
-    const rec=S.moods[k]; const isToday=k===tk;
+    const cd=new Date(moodView.y,moodView.m,day); cd.setHours(0,0,0,0);
+    const k=dateKey(cd); const rec=S.moods[k]; const isToday=k===tk;
+    const editable=cd.getTime()<=today0.getTime();
     const cell=document.createElement('div');
-    cell.className='mcell'+(rec?' has':' blank')+(isToday?' today':'');
-    if(rec){ cell.innerHTML=moodFace(rec.v,22)+'<span class="dn">'+day+'</span>'; sum+=rec.v; cnt++; }
+    cell.className='mcell'+(rec?' has':' blank')+(isToday?' today':'')+(editable?' pick':'');
+    if(rec){ cell.innerHTML=moodFace(rec.v,26)+'<span class="dn">'+day+'</span>';
+      cell.style.background=MOOD_META[rec.v].pale; cell.style.borderColor=MOOD_META[rec.v].col;
+      sum+=rec.v; cnt++; }
     else { cell.innerHTML='<span class="dn">'+day+'</span>'; }
-    if(isToday){ cell.onclick=()=>{ const cur=(S.moods[k]&&S.moods[k].v)||0;
-      S.moods[k]={v:(cur+1)%5, m:true}; save(); renderMood();
-      bubble('今天心情：'+MOOD_META[S.moods[k].v].name+'~'); }; }
+    if(editable){ cell.onclick=()=>openPicker(k,(moodView.m+1)+'月'+day+'日',isToday); }
     grid.appendChild(cell);
   }
   const avg=cnt?Math.round(sum/cnt):2;
   document.getElementById('moodFoot').innerHTML=
-    '本月记录 '+cnt+' 天 · 连续陪伴 '+moodStreak()+' 天<br>平均心情：'+MOOD_META[avg].name+'（点今天的格子可自己定心情）';
+    '本月记录 '+cnt+' 天 · 连续陪伴 '+moodStreak()+' 天<br>平均心情：'+MOOD_META[avg].name+'（点任意日期即可记录当天心情）';
 }
+
+/* ---------- 心情选择器（点一下就选） ---------- */
+let pickEl=null, pickKey=null;
+function buildPicker(){
+  pickEl=document.createElement('div'); pickEl.id='moodPick';
+  pickEl.innerHTML='<div class="pkcard">'
+    +'<div class="pkttl"><span id="pkDate"></span><button id="pkClose">✕</button></div>'
+    +'<div class="pkrow"></div>'
+    +'<button id="pkClear">清除这天</button></div>';
+  document.querySelector('.mbox').appendChild(pickEl);
+  const row=pickEl.querySelector('.pkrow');
+  MOOD_META.forEach((m,i)=>{ const b=document.createElement('div'); b.className='pkface';
+    b.innerHTML=moodFace(i,44)+'<span>'+m.name+'</span>';
+    b.onclick=()=>{ S.moods[pickKey]={v:i,m:true}; save(); closePicker(); renderMood();
+      if(pickKey===todayKey()) bubble('今天心情：'+m.name+'~'); };
+    row.appendChild(b); });
+  pickEl.querySelector('#pkClose').onclick=closePicker;
+  pickEl.addEventListener('click',e=>{ if(e.target===pickEl) closePicker(); });
+  pickEl.querySelector('#pkClear').onclick=()=>{ if(pickKey!==todayKey()){ delete S.moods[pickKey]; }
+    else { S.moods[pickKey]={v:computeMoodLevel(),m:false}; }
+    save(); closePicker(); renderMood(); };
+}
+function openPicker(key,label,isToday){
+  if(!pickEl) buildPicker();
+  pickKey=key;
+  pickEl.querySelector('#pkDate').textContent='选择「'+label+'」的心情';
+  pickEl.querySelector('#pkClear').textContent=isToday?'恢复自动心情':'清除这天';
+  const cur=(S.moods[key]&&S.moods[key].v);
+  pickEl.querySelectorAll('.pkface').forEach((f,i)=>f.classList.toggle('on',i===cur));
+  pickEl.style.display='flex';
+}
+function closePicker(){ if(pickEl) pickEl.style.display='none'; }
 
 /* 托盘：分类 + 内容 */
 let curCat='furn';
