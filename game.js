@@ -112,6 +112,8 @@ const CATALOG=[
   {id:'dtable',   name:'方桌',  cat:'furn', img:'cc_dtable.png',    w:76, h:71,  price:40},
   {id:'floorlamp',name:'落地灯',cat:'furn', img:'cc_floorlamp.png', w:34, h:78,  price:35},
   {id:'toilet',   name:'马桶',  cat:'furn', img:'cc_toilet.png',    w:34, h:88,  price:30},
+  {id:'bathtub',  name:'浴缸',  cat:'furn', img:'cc_bathtub.png',   w:120,h:70,  price:70},
+  {id:'sink',     name:'洗手台',cat:'furn', img:'cc_sink.png',      w:56, h:80,  price:35},
   {id:'mirror',   name:'穿衣镜',cat:'deco', img:'cc_mirror.png',    w:30, h:75,  price:35},
   {id:'picture2', name:'相框',  cat:'deco', img:'cc_picture2.png',  w:30, h:52,  price:20},
   {id:'window2',  name:'木窗',  cat:'deco', img:'cc_window2.png',   w:67, h:43,  price:30},
@@ -124,8 +126,9 @@ const STARTER_OWNED=CATALOG.filter(c=>c.price===0).map(c=>c.id);
 
 /* 房间 */
 const ROOMS=[
-  {key:'bedroom',name:'卧室',icon:'🛏',wall:'cc_wall.png'},
-  {key:'living', name:'客厅',icon:'🛋',wall:'cc_wall2.png'},
+  {key:'bedroom', name:'卧室',icon:'🛏',wall:'cc_wall.png'},
+  {key:'living',  name:'客厅',icon:'🛋',wall:'cc_wall2.png'},
+  {key:'bathroom',name:'浴室',icon:'🛁',wall:'cc_bathwall.png'},
 ];
 const ROOMMAP=Object.fromEntries(ROOMS.map(r=>[r.key,r]));
 
@@ -194,10 +197,16 @@ function livingStarter(cw,ch){ return [
   put('rug_orange',0.50,0.66,cw,ch), put('sofa_green',0.34,0.46,cw,ch), put('coffee',0.50,0.60,cw,ch),
   put('armchair',0.80,0.52,cw,ch), put('fireplace',0.16,0.40,cw,ch), put('plant',0.90,0.72,cw,ch),
 ]; }
+function bathroomStarter(cw,ch){ return [
+  put('bathmat',0.46,0.74,cw,ch), put('bathtub',0.24,0.52,cw,ch), put('toilet',0.55,0.56,cw,ch),
+  put('sink',0.76,0.52,cw,ch), put('mirror',0.76,0.27,cw,ch), put('plant',0.92,0.70,cw,ch),
+]; }
 function initRoom(key){
   const cw=room.clientWidth, ch=room.clientHeight;
   if(key==='living'){ ['sofa_green','coffee','rug_orange','armchair','fireplace'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
     return {floor:0, placed:livingStarter(cw,ch), pet:petDefault(cw,ch)}; }
+  if(key==='bathroom'){ ['bathtub','sink','toilet','mirror','bathmat'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
+    return {floor:3, placed:bathroomStarter(cw,ch), pet:petDefault(cw,ch)}; }  // floor 3 = 蓝瓷砖
   return {floor:0, placed:bedroomStarter(cw,ch), pet:petDefault(cw,ch)};
 }
 function petDefault(cw,ch){ return {x:Math.round(cw/2-48), y:Math.round(ch*0.58)}; }
@@ -463,6 +472,10 @@ const CARE_TXT={pet:['嘿嘿~','舒服…','再摸摸'],food:['谢谢~','好吃�
 document.querySelectorAll('[data-care]').forEach(b=>{
   b.onclick=()=>{ if(edit) return;
     const k=b.dataset.care; const map={pet:'mood',food:'food',clean:'clean',energy:'energy'};
+    if(k==='clean' && S.room!=='bathroom'){          // 洗澡要去浴室
+      S.room='bathroom'; save(); hideSelbar(); applyRoom(); renderPlaced(); placePet();
+      bubble('去浴室洗香香~');
+    }
     S.needs[map[k]]=Math.min(100,S.needs[map[k]]+18);
     if(k!=='pet') S.needs.mood=Math.min(100,S.needs.mood+6);
     S.coins+=1; recordTodayMood(); save(); renderNeeds();
