@@ -61,6 +61,30 @@ function moodFace(level,px){
     +MOOD_SVG[level]+`</svg>`;
 }
 
+/* ---------- 衣柜饰品（头顶小配饰，像素） ---------- */
+// top=饰品在头部的纵向位置(占贴图高度%)，size=显示宽(px)
+const ACC=[
+  {key:'none',  name:'不戴',   art:null},
+  {key:'bow',   name:'蝴蝶结', top:9,  size:34, p:{P:'#f3a3b5',D:'#d97a90'},
+    g:['P.....P','PP...PP','PPPDPPP','PP...PP','P.....P']},
+  {key:'flower',name:'小红花', top:7,  size:30, p:{R:'#e8687a',Y:'#f5c95a',G:'#7aa84a'},
+    g:['.R.R.','RRRRR','.RYR.','RRRRR','.R.R.']},
+  {key:'crown', name:'小皇冠', top:5,  size:36, p:{Y:'#f2c94a',R:'#e0557a'},
+    g:['Y.Y.Y','YYYYY','YRYRY','YYYYY']},
+  {key:'beret', name:'贝雷帽', top:4,  size:38, p:{B:'#c97a86',N:'#8a5a3a'},
+    g:['..N..','.BBB.','BBBBB','BBBBB']},
+  {key:'star',  name:'星星夹', top:8,  size:28, p:{Y:'#f5c95a'},
+    g:['..Y..','YYYYY','.YYY.','YY.YY']},
+];
+const ACCMAP=Object.fromEntries(ACC.map(a=>[a.key,a]));
+function accSvg(key,px){
+  const a=ACCMAP[key]; if(!a||!a.g) return '';
+  const h=a.g.length,w=a.g[0].length; let r='';
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const ch=a.g[y][x];const c=a.p[ch];if(!c||ch==='.')continue;
+    r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`;}
+  return `<svg viewBox="0 0 ${w} ${h}" width="${px||a.size}" height="${Math.round((px||a.size)*h/w)}" style="display:block;filter:drop-shadow(0 1px 0 rgba(80,55,30,.18))">${r}</svg>`;
+}
+
 /* ---------- 数据 ---------- */
 const CELL=20;
 const FLOORS=[
@@ -148,6 +172,7 @@ if(S.gems==null) S.gems=5;
 if(!S.rooms){ S.rooms={ bedroom:{floor:S.floor||0, placed:S.placed||[], pet:S.pet||null} }; delete S.floor; delete S.placed; delete S.pet; }
 if(!S.room) S.room='bedroom';
 if(!S.moods) S.moods={};   // { 'YYYY-MM-DD': {v:0-4, m:是否手动} }
+if(!S.outfit) S.outfit='none';   // 头顶饰品
 if(S.intimacy==null) S.intimacy=0;   // 亲密度
 if(S.stage==null) S.stage=0;         // 记录上次的成长阶段，用于检测升级
 
@@ -357,10 +382,25 @@ document.querySelectorAll('#nav .n').forEach(n=>{ n.onclick=()=>{
   const k=n.dataset.nav;
   if(k==='mood'){ openMood(); return; }
   closeMood();
+  if(k==='closet'){ openCloset(); return; }
+  closeCloset();
   if(k==='home'){ setNav('home'); return; }
   setNav('home');
-  const txt={closet:'衣柜换装 之后做~',me:'个人页 之后做~'};
-  bubble(txt[k]||'之后做~'); }; });
+  bubble('个人页 之后做~'); }; });
+
+/* ---------- 衣柜换装 ---------- */
+const closetPage=document.getElementById('closet');
+function openCloset(){ if(edit) setEdit(false); setNav('closet'); closetPage.style.display='flex'; renderCloset(); }
+function closeCloset(){ if(closetPage) closetPage.style.display='none'; }
+function renderCloset(){
+  const box=document.getElementById('closetItems'); box.innerHTML='';
+  ACC.forEach(a=>{ const it=document.createElement('div'); it.className='citem'+(a.key===S.outfit?' on':'');
+    it.innerHTML='<div class="cpic">'+(a.g?accSvg(a.key,Math.min(a.size,34)):'<span class="cnone">∅</span>')+'</div><div class="cnm">'+a.name+'</div>';
+    it.onclick=()=>{ S.outfit=a.key; save(); renderOutfit(); renderCloset();
+      bubble(a.g?('戴上「'+a.name+'」啦~'):'摘下来啦~'); };
+    box.appendChild(it); });
+}
+document.getElementById('closetClose').onclick=()=>{ closeCloset(); setNav('home'); };
 
 /* ---------- 心情日历页 ---------- */
 const moodPage=document.getElementById('moodpage');
@@ -507,13 +547,24 @@ if(growthEl) growthEl.addEventListener('click',()=>{ if(edit) return; const idx=
   bubble(next?('陪小昼一起长大~ 距「'+next.name+'」还差 '+Math.max(1,next.min-growthPoints())+' 亲密度'):'小昼已经长成青年啦，谢谢你的陪伴~'); });
 
 /* ---------- 角色定位 ---------- */
+/* 头顶饰品叠加层：与角色同位、同缩放、同漂浮 */
+const petAcc=document.createElement('div'); petAcc.id='petAcc'; room.appendChild(petAcc);
+function syncAcc(){ petAcc.style.left=petEl.style.left; petAcc.style.top=petEl.style.top;
+  petAcc.style.width=petEl.offsetWidth+'px'; petAcc.style.height=petEl.offsetHeight+'px'; }
+function renderOutfit(){
+  const a=ACCMAP[S.outfit]||ACCMAP.none;
+  if(!a.g){ petAcc.innerHTML=''; petAcc.style.display='none'; return; }
+  petAcc.style.display='block';
+  petAcc.innerHTML='<span class="accItem" style="top:'+a.top+'%">'+accSvg(a.key)+'</span>';
+  syncAcc();
+}
 function placePet(){
   if(!cur().pet) cur().pet=petDefault(room.clientWidth,room.clientHeight);
   petEl.style.left=cur().pet.x+'px'; petEl.style.top=cur().pet.y+'px';
-  positionSay();
+  positionSay(); syncAcc();
 }
 function positionSay(){ sayEl.style.left=(parseInt(petEl.style.left)+petEl.offsetWidth/2)+'px';
-  sayEl.style.top=(parseInt(petEl.style.top)-38)+'px'; }
+  sayEl.style.top=(parseInt(petEl.style.top)-38)+'px'; syncAcc(); }
 function bubble(t){ positionSay(); sayEl.textContent=t; sayEl.style.opacity=1;
   clearTimeout(bubble._t); bubble._t=setTimeout(()=>sayEl.style.opacity=0,1800); }
 function petHop(){ const g=STAGES[stageIndex()].grow; petEl.style.animation='none';
@@ -524,6 +575,7 @@ function petHop(){ const g=STAGES[stageIndex()].grow; petEl.style.animation='non
 function applyGrowth(){
   const idx=stageIndex(); const st=STAGES[idx];
   petEl.style.setProperty('--grow', st.grow);          // 缩放整张贴图（不拆层）
+  if(typeof petAcc!=='undefined'){ petAcc.style.setProperty('--grow', st.grow); syncAcc(); }
   if(growthEl){
     growthEl.querySelector('.gspr').textContent=st.spr;
     growthEl.querySelector('.gname').textContent=st.name;
@@ -558,4 +610,5 @@ placePet();
 renderNeeds();
 recordTodayMood(); save();
 checkStageUp(true);   // 应用当前成长阶段的缩放与徽章（启动不弹升级提示）
+renderOutfit();       // 戴上已选的头顶饰品
 setTimeout(()=>bubble('妹妹，你回来啦~'),700);
