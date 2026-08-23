@@ -148,6 +148,21 @@ if(S.gems==null) S.gems=5;
 if(!S.rooms){ S.rooms={ bedroom:{floor:S.floor||0, placed:S.placed||[], pet:S.pet||null} }; delete S.floor; delete S.placed; delete S.pet; }
 if(!S.room) S.room='bedroom';
 if(!S.moods) S.moods={};   // { 'YYYY-MM-DD': {v:0-4, m:是否手动} }
+if(S.intimacy==null) S.intimacy=0;   // 亲密度
+if(S.stage==null) S.stage=0;         // 记录上次的成长阶段，用于检测升级
+
+/* ---------- 成长阶段 ---------- */
+// 小昼随亲密度 + 累计陪伴天数成长；同一张贴图，靠缩放表现从幼到长大
+const STAGES=[
+  {key:'baby', name:'幼崽', spr:'🌱', grow:0.82, min:0},
+  {key:'teen', name:'少年', spr:'🌿', grow:1.0,  min:80},
+  {key:'youth',name:'青年', spr:'🌸', grow:1.14, min:260},
+];
+function daysCount(){ return Object.keys(S.moods).length || 1; }
+function growthPoints(){ return (S.intimacy||0) + daysCount()*15; }
+function stageIndex(){ const gp=growthPoints(); let i=0;
+  for(let k=0;k<STAGES.length;k++){ if(gp>=STAGES[k].min) i=k; } return i; }
+function addIntimacy(n){ S.intimacy=(S.intimacy||0)+n; }
 
 /* ---------- 心情记录 ---------- */
 function dateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -167,6 +182,7 @@ const petEl=document.getElementById('pet');
 const sayEl=document.getElementById('say');
 const selbar=document.getElementById('selbar');
 const wallEl=document.getElementById('wall');
+const growthEl=document.getElementById('growth');
 let edit=false, selected=null;
 
 /* 当前房间 */
@@ -302,6 +318,7 @@ function setEdit(on){
   document.getElementById('nav').style.display=on?'none':'flex';
   document.getElementById('needs').style.display=on?'none':'flex';
   document.getElementById('topr').style.display=on?'none':'flex';
+  growthEl.style.display=on?'none':'flex';
   if(!on){ selectFurn(null); petEl.classList.remove('sel'); hideSelbar(); }
   else { renderCats(); renderTray(); }
 }
@@ -478,11 +495,16 @@ document.querySelectorAll('[data-care]').forEach(b=>{
     }
     S.needs[map[k]]=Math.min(100,S.needs[map[k]]+18);
     if(k!=='pet') S.needs.mood=Math.min(100,S.needs.mood+6);
-    S.coins+=1; recordTodayMood(); save(); renderNeeds();
-    const t=CARE_TXT[k]; bubble(t[Math.floor(Math.random()*t.length)]); petHop();
+    S.coins+=1; addIntimacy(4); recordTodayMood(); save(); renderNeeds();
+    const up=checkStageUp();
+    if(!up){ const t=CARE_TXT[k]; bubble(t[Math.floor(Math.random()*t.length)]); petHop(); }
   };
 });
-petEl.addEventListener('click',e=>{ if(edit) return; S.needs.mood=Math.min(100,S.needs.mood+4); save(); renderNeeds(); bubble('妹妹~'); petHop(); });
+petEl.addEventListener('click',e=>{ if(edit) return; S.needs.mood=Math.min(100,S.needs.mood+4); addIntimacy(1); save(); renderNeeds();
+  if(!checkStageUp()){ bubble('妹妹~'); petHop(); } });
+// 点徽章看看成长进度
+if(growthEl) growthEl.addEventListener('click',()=>{ if(edit) return; const idx=stageIndex(); const next=STAGES[idx+1];
+  bubble(next?('陪小昼一起长大~ 距「'+next.name+'」还差 '+Math.max(1,next.min-growthPoints())+' 亲密度'):'小昼已经长成青年啦，谢谢你的陪伴~'); });
 
 /* ---------- 角色定位 ---------- */
 function placePet(){
@@ -494,9 +516,33 @@ function positionSay(){ sayEl.style.left=(parseInt(petEl.style.left)+petEl.offse
   sayEl.style.top=(parseInt(petEl.style.top)-38)+'px'; }
 function bubble(t){ positionSay(); sayEl.textContent=t; sayEl.style.opacity=1;
   clearTimeout(bubble._t); bubble._t=setTimeout(()=>sayEl.style.opacity=0,1800); }
-function petHop(){ petEl.style.animation='none';
-  petEl.animate([{transform:'translateY(0)'},{transform:'translateY(-12px)'},{transform:'translateY(0)'}],{duration:340})
+function petHop(){ const g=STAGES[stageIndex()].grow; petEl.style.animation='none';
+  petEl.animate([{transform:`translateY(0) scale(${g})`},{transform:`translateY(-12px) scale(${g})`},{transform:`translateY(0) scale(${g})`}],{duration:340})
     .onfinish=()=>{ petEl.style.animation=''; }; }
+
+/* ---------- 成长表现 + 徽章 ---------- */
+function applyGrowth(){
+  const idx=stageIndex(); const st=STAGES[idx];
+  petEl.style.setProperty('--grow', st.grow);          // 缩放整张贴图（不拆层）
+  if(growthEl){
+    growthEl.querySelector('.gspr').textContent=st.spr;
+    growthEl.querySelector('.gname').textContent=st.name;
+    const gp=growthPoints(); const next=STAGES[idx+1];
+    const isMax=!next; growthEl.classList.toggle('max',isMax);
+    let frac=1;
+    if(next){ frac=(gp-st.min)/(next.min-st.min); frac=Math.max(0.04,Math.min(1,frac)); }
+    growthEl.querySelector('.gbar i').style.width=Math.round(frac*100)+'%';
+  }
+}
+// 检测升级：陪伴让小昼长大了
+function checkStageUp(silent){
+  const idx=stageIndex();
+  if(idx>(S.stage||0)){ S.stage=idx; save(); applyGrowth();
+    if(!silent){ petHop(); setTimeout(()=>bubble('小昼长大啦，现在是'+STAGES[idx].name+'~'),120); }
+    return true;
+  }
+  S.stage=idx; applyGrowth(); return false;
+}
 
 /* 需求缓降 */
 setInterval(()=>{ for(const k in S.needs) S.needs[k]=Math.max(0,S.needs[k]-1); recordTodayMood(); save(); renderNeeds(); }, 20000);
@@ -511,4 +557,5 @@ makeDraggable(petEl,'pet');
 placePet();
 renderNeeds();
 recordTodayMood(); save();
+checkStageUp(true);   // 应用当前成长阶段的缩放与徽章（启动不弹升级提示）
 setTimeout(()=>bubble('妹妹，你回来啦~'),700);
