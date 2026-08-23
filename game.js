@@ -173,6 +173,9 @@ if(!S.rooms){ S.rooms={ bedroom:{floor:S.floor||0, placed:S.placed||[], pet:S.pe
 if(!S.room) S.room='bedroom';
 if(!S.moods) S.moods={};   // { 'YYYY-MM-DD': {v:0-4, m:是否手动} }
 if(!S.outfit) S.outfit='none';   // 头顶饰品
+if(!S.ai) S.ai={key:'',model:'deepseek-chat',enabled:false,auto:true};  // 小昼AI设置（key只存本地）
+if(!S.chat) S.chat=[];           // 与小昼的聊天记录 [{r:'me'|'xz',t:''}]
+if(!S.zdiary) S.zdiary={};        // 小昼自己写的日记 { 'YYYY-MM-DD': '...' }
 if(S.intimacy==null) S.intimacy=0;   // 亲密度
 if(S.stage==null) S.stage=0;         // 记录上次的成长阶段，用于检测升级
 
@@ -384,13 +387,13 @@ document.querySelectorAll('#nav .n').forEach(n=>{ n.onclick=()=>{
   closeMood();
   if(k==='closet'){ openCloset(); return; }
   closeCloset();
-  if(k==='home'){ setNav('home'); return; }
-  setNav('home');
-  bubble('个人页 之后做~'); }; });
+  if(k==='me'){ openMe(); return; }
+  closeMe(); closeChat();
+  setNav('home'); }; });
 
 /* ---------- 衣柜换装 ---------- */
 const closetPage=document.getElementById('closet');
-function openCloset(){ if(edit) setEdit(false); setNav('closet'); closetPage.style.display='flex'; renderCloset(); }
+function openCloset(){ if(edit) setEdit(false); closeMood(); closeMe(); closeChat(); setNav('closet'); closetPage.style.display='flex'; renderCloset(); }
 function closeCloset(){ if(closetPage) closetPage.style.display='none'; }
 function renderCloset(){
   const box=document.getElementById('closetItems'); box.innerHTML='';
@@ -406,8 +409,8 @@ document.getElementById('closetClose').onclick=()=>{ closeCloset(); setNav('home
 const moodPage=document.getElementById('moodpage');
 let moodView=null; // {y, m(0-11)}
 function thisMonth(){ const d=new Date(); return {y:d.getFullYear(), m:d.getMonth()}; }
-function openMood(){ if(edit) setEdit(false); recordTodayMood(); save();
-  moodView=thisMonth(); setNav('mood'); moodPage.style.display='flex'; renderMood(); }
+function openMood(){ if(edit) setEdit(false); closeCloset(); closeMe(); closeChat(); recordTodayMood(); save();
+  moodView=thisMonth(); setNav('mood'); moodPage.style.display='flex'; switchDiaryTab('cal'); }
 function closeMood(){ closePicker(); moodPage.style.display='none'; }
 document.getElementById('moodClose').onclick=()=>{ closeMood(); setNav('home'); };
 document.getElementById('moodPrev').onclick=()=>{ moodView.m--; if(moodView.m<0){moodView.m=11;moodView.y--;} renderMood(); };
@@ -466,8 +469,12 @@ function buildPicker(){
   pickEl.querySelector('#pkClose').onclick=closePicker;
   pickEl.addEventListener('click',e=>{ if(e.target===pickEl) closePicker(); });
   pickEl.querySelector('#pkSave').onclick=()=>{ const note=pickEl.querySelector('#pkNote').value.trim();
-    S.moods[pickKey]={v:pickV, m:true, note:note}; save(); closePicker(); renderMood();
-    if(pickToday) bubble(note?'今天的日记记好啦~':'今天心情：'+MOOD_META[pickV].name+'~'); };
+    const prev=S.moods[pickKey]||{}; S.moods[pickKey]={v:pickV, m:true, note:note, reply:prev.reply};
+    if(!note) delete S.moods[pickKey].reply;
+    save(); closePicker(); if(diaryTab==='list') renderDiaryList(); else renderMood();
+    if(pickToday) bubble(note?'今天的日记记好啦~':'今天心情：'+MOOD_META[pickV].name+'~');
+    if(note && S.ai.enabled && S.ai.auto){ xzhouReply(pickKey).then(()=>{ if(moodPage.style.display!=='none'&&diaryTab==='list') renderDiaryList(); }); }
+  };
   pickEl.querySelector('#pkClear').onclick=()=>{ if(!pickToday){ delete S.moods[pickKey]; }
     else { S.moods[pickKey]={v:computeMoodLevel(),m:false}; }
     save(); closePicker(); renderMood(); };
@@ -484,6 +491,131 @@ function openPicker(key,label,isToday){
   pickEl.style.display='flex';
 }
 function closePicker(){ if(pickEl) pickEl.style.display='none'; }
+
+/* ========== 小昼 AI（DeepSeek，key 只存本地） ========== */
+const XZHOU_SYS='你是"夏以昼"（昵称小昼），一个温柔、体贴、带点宠溺的男生，住在一个像素小屋里，被一直照顾你的"妹妹"用心陪伴着。你说话温暖、口语化、简短自然，像真的在她身边。称呼对方"妹妹"。不要用括号里的动作描写，不要太长，通常2到4句。全程中文。';
+function stateBrief(){ const n=S.needs; return '现在的状态：心情'+n.mood+' 吃饱'+n.food+' 干净'+n.clean+' 精力'+n.energy+'（满分100）；成长阶段「'+STAGES[stageIndex()].name+'」；已陪伴'+daysCount()+'天；亲密度'+(S.intimacy||0)+'。'; }
+async function aiCall(messages){
+  const key=(S.ai.key||'').trim();
+  if(!S.ai.enabled || !key){ const e=new Error('未启用'); e.fallback=true; throw e; }
+  const res=await fetch('https://api.deepseek.com/chat/completions',{
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:(S.ai.model||'deepseek-chat').trim(),messages,temperature:0.85,max_tokens:320})
+  });
+  if(!res.ok){ const t=await res.text().catch(()=>''); throw new Error('HTTP '+res.status+' '+t.slice(0,100)); }
+  const data=await res.json();
+  const txt=data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content;
+  if(!txt) throw new Error('返回为空'); return txt.trim();
+}
+const FB_REPLY=['妹妹写的我都看到啦，今天也辛苦你了，抱抱~','嗯嗯，我一直都在呢，谢谢你把这些记下来。','看到你写的这些，我心里暖暖的。','不管开心还是不开心，我都陪着你哦。'];
+const FB_DIARY=['今天妹妹来看我啦，被照顾得暖暖的，是很满足的一天。','窝在小屋里，听着妹妹忙来忙去的动静，觉得很安心。','阳光正好，等妹妹回来一起晒晒太阳。'];
+const FB_CHAT=['我在呢，妹妹。','嗯？怎么啦~','和你说话总是很开心。','我一直在这儿等你哦。'];
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+async function xzhouReply(dk){ const rec=S.moods[dk]; if(!rec||!rec.note) return;
+  try{ rec.reply=await aiCall([{role:'system',content:XZHOU_SYS},{role:'user',content:stateBrief()+'\n这是妹妹'+fmtDate(dk)+'写的日记：「'+rec.note+'」\n请你以小昼的口吻温柔地回应这篇日记。'}]); }
+  catch(e){ if(e.fallback) rec.reply=pick(FB_REPLY); else { console.warn('AI回复失败',e); rec.reply=rec.reply||('（没连上小昼…'+(e.message||'')+'）'); } }
+  save();
+}
+async function xzhouDiary(dk){
+  try{ const her=(S.moods[dk]&&S.moods[dk].note)||'';
+    S.zdiary[dk]=await aiCall([{role:'system',content:XZHOU_SYS},{role:'user',content:stateBrief()+(her?'\n妹妹今天写了：「'+her+'」':'')+'\n请你用第一人称，写一小段「小昼自己的今日日记」，温柔日常，40字左右。'}]); }
+  catch(e){ if(e.fallback) S.zdiary[dk]=pick(FB_DIARY); else S.zdiary[dk]=S.zdiary[dk]||('（没连上小昼…'+(e.message||'')+'）'); }
+  save();
+}
+async function xzhouChatSend(text){
+  S.chat.push({r:'me',t:text}); if(S.chat.length>40) S.chat=S.chat.slice(-40); save(); renderChat(true);
+  try{ const hist=S.chat.filter(m=>m.t).slice(-12).map(m=>({role:m.r==='me'?'user':'assistant',content:m.t}));
+    const txt=await aiCall([{role:'system',content:XZHOU_SYS+' '+stateBrief()},...hist]); S.chat.push({r:'xz',t:txt}); }
+  catch(e){ S.chat.push({r:'xz',t:e.fallback?pick(FB_CHAT):('（没连上呢…'+(e.message||'')+' 去「我的」检查下设置吧）')}); }
+  save(); renderChat();
+}
+function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function fmtDate(k){ const p=k.split('-'); return (+p[1])+'月'+(+p[2])+'日'; }
+
+/* ========== 日记：两个子视图（心情日历 / 日记本） ========== */
+let diaryTab='cal';
+function switchDiaryTab(t){ diaryTab=t;
+  document.querySelectorAll('.mtab').forEach(x=>x.classList.toggle('on',x.dataset.dtab===t));
+  document.getElementById('calView').style.display=(t==='cal')?'':'none';
+  document.getElementById('listView').style.display=(t==='list')?'block':'none';
+  if(t==='cal') renderMood(); else renderDiaryList();
+}
+document.querySelectorAll('.mtab').forEach(x=>x.onclick=()=>switchDiaryTab(x.dataset.dtab));
+function renderDiaryList(){
+  const box=document.getElementById('diaryList'); box.innerHTML='';
+  const keys=new Set([...Object.keys(S.moods),...Object.keys(S.zdiary)]);
+  const arr=[...keys].filter(k=>{ const r=S.moods[k]; return (r&&r.note)||S.zdiary[k]; }).sort().reverse();
+  if(!arr.length){ box.innerHTML='<div class="dempty">还没有日记~<br>去「心情日历」点某一天写下今天，<br>小昼就会回应你啦。</div>'; return; }
+  arr.forEach(k=>{ const r=S.moods[k]||{}; const d=document.createElement('div'); d.className='dentry';
+    let h='<div class="dhd">'+(r.v!=null?moodFace(r.v,24):'')+'<span class="dd">'+fmtDate(k)+'</span></div>';
+    if(r.note) h+='<div class="dnote">'+esc(r.note)+'</div>';
+    if(r.reply) h+='<div class="dreply"><b>小昼</b>'+esc(r.reply)+'</div>';
+    if(S.zdiary[k]) h+='<div class="dzhou"><b>小昼的日记</b>'+esc(S.zdiary[k])+'</div>';
+    let btns='';
+    if(r.note && !r.reply) btns+='<button class="dbtn" data-act="reply">让小昼回复</button>';
+    if(!S.zdiary[k]) btns+='<button class="dbtn" data-act="diary">让小昼写日记</button>';
+    if(btns) h+='<div class="dbtns">'+btns+'</div>';
+    d.innerHTML=h;
+    d.querySelectorAll('.dbtn').forEach(b=>b.onclick=async()=>{ b.classList.add('busy'); b.textContent='小昼在写…';
+      if(b.dataset.act==='reply') await xzhouReply(k); else await xzhouDiary(k); renderDiaryList(); });
+    box.appendChild(d);
+  });
+}
+
+/* ========== 我的页 ========== */
+const mePage=document.getElementById('mepage');
+function openMe(){ if(edit) setEdit(false); closeChat(); setNav('me'); mePage.style.display='flex'; renderMe(); }
+function closeMe(){ if(mePage) mePage.style.display='none'; }
+function renderMe(){
+  document.getElementById('meStats').innerHTML=
+    '<div class="st"><b>'+daysCount()+'</b><span>陪伴天数</span></div>'+
+    '<div class="st"><b>'+STAGES[stageIndex()].name+'</b><span>成长阶段</span></div>'+
+    '<div class="st"><b>'+(S.intimacy||0)+'</b><span>亲密度</span></div>';
+  document.getElementById('aiKey').value=S.ai.key||'';
+  document.getElementById('aiModel').value=S.ai.model||'deepseek-chat';
+  document.getElementById('aiEnabled').checked=!!S.ai.enabled;
+  document.getElementById('aiAuto').checked=!!S.ai.auto;
+  document.getElementById('aiStatus').textContent=(S.ai.enabled&&S.ai.key)?'已启用 · 小昼会用 AI 回应你':'未启用 · 现在用本地暖心话兜底';
+}
+document.getElementById('meClose').onclick=()=>{ closeMe(); setNav('home'); };
+document.getElementById('aiSave').onclick=()=>{
+  S.ai.key=document.getElementById('aiKey').value.trim();
+  S.ai.model=document.getElementById('aiModel').value.trim()||'deepseek-chat';
+  S.ai.enabled=document.getElementById('aiEnabled').checked;
+  S.ai.auto=document.getElementById('aiAuto').checked;
+  save(); renderMe(); document.getElementById('aiStatus').textContent='已保存~';
+};
+document.getElementById('aiTest').onclick=async()=>{
+  const st=document.getElementById('aiStatus');
+  const bak={k:S.ai.key,e:S.ai.enabled,m:S.ai.model};
+  S.ai.key=document.getElementById('aiKey').value.trim();
+  S.ai.model=document.getElementById('aiModel').value.trim()||'deepseek-chat';
+  S.ai.enabled=true;
+  if(!S.ai.key){ st.textContent='请先填 API Key 再测试'; Object.assign(S.ai,{key:bak.k,enabled:bak.e,model:bak.m}); return; }
+  st.textContent='正在连接小昼…';
+  try{ const t=await aiCall([{role:'system',content:XZHOU_SYS},{role:'user',content:'（测试）跟妹妹打个招呼吧'}]); st.textContent='连上啦！小昼说：'+t; }
+  catch(e){ st.textContent='没连上：'+(e.message||'检查 key / 网络 / 该接口是否允许浏览器直连(CORS)'); }
+  finally{ Object.assign(S.ai,{key:bak.k,enabled:bak.e,model:bak.m}); }
+};
+
+/* ========== 聊天 ========== */
+const chatPage=document.getElementById('chat');
+function openChat(){ chatPage.style.display='flex'; renderChat(); }
+function closeChat(){ if(chatPage) chatPage.style.display='none'; }
+function renderChat(thinking){
+  const log=document.getElementById('chatLog'); log.innerHTML='';
+  if(!S.chat.length && !thinking){ const w=document.createElement('div'); w.className='cmsg xz'; w.textContent='妹妹来啦~ 想和我说点什么？'; log.appendChild(w); }
+  S.chat.forEach(m=>{ const el=document.createElement('div'); el.className='cmsg '+(m.r==='me'?'me':'xz'); el.textContent=m.t; log.appendChild(el); });
+  if(thinking){ const el=document.createElement('div'); el.className='cmsg xz think'; el.textContent='小昼在想…'; log.appendChild(el); }
+  log.scrollTop=log.scrollHeight;
+}
+document.getElementById('openChat').onclick=()=>{ closeMe(); openChat(); };
+document.getElementById('chatClose').onclick=()=>{ closeChat(); openMe(); };
+function doSend(){ const inp=document.getElementById('chatIn'); const t=inp.value.trim(); if(!t) return;
+  inp.value=''; const btn=document.getElementById('chatSend'); btn.classList.add('busy');
+  xzhouChatSend(t).finally(()=>btn.classList.remove('busy')); }
+document.getElementById('chatSend').onclick=doSend;
+document.getElementById('chatIn').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); doSend(); } });
 
 /* 托盘：分类 + 内容 */
 let curCat='furn';

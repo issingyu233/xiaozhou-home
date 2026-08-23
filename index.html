@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>夏以昼喂养模拟器</title>
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <div id="app">
@@ -88,33 +88,82 @@
     </div>
   </div>
 
-  <!-- ===== 心情日历 ===== -->
+  <!-- ===== 日记（心情日历 + 日记本 两个子视图）===== -->
   <div id="moodpage">
     <div class="mbox">
       <div class="mhead">
         <span class="mtitle">日记</span>
         <button id="moodClose">✕</button>
       </div>
-      <div class="mnav">
-        <span class="marw" id="moodPrev"><span class="ico" data-ico="arwL"></span></span>
-        <span class="mmon" id="moodMon">2026 年 8 月</span>
-        <span class="marw" id="moodNext"><span class="ico" data-ico="arwR"></span></span>
+      <div class="mtabs">
+        <span class="mtab on" data-dtab="cal">心情日历</span>
+        <span class="mtab" data-dtab="list">日记本</span>
       </div>
-      <div class="mweek"><i>一</i><i>二</i><i>三</i><i>四</i><i>五</i><i>六</i><i>日</i></div>
-      <div id="moodGrid"></div>
-      <div id="moodFoot"></div>
+      <div id="calView">
+        <div class="mnav">
+          <span class="marw" id="moodPrev"><span class="ico" data-ico="arwL"></span></span>
+          <span class="mmon" id="moodMon">2026 年 8 月</span>
+          <span class="marw" id="moodNext"><span class="ico" data-ico="arwR"></span></span>
+        </div>
+        <div class="mweek"><i>一</i><i>二</i><i>三</i><i>四</i><i>五</i><i>六</i><i>日</i></div>
+        <div id="moodGrid"></div>
+        <div id="moodFoot"></div>
+      </div>
+      <div id="listView">
+        <div id="diaryList"></div>
+      </div>
     </div>
   </div>
 
-  <!-- ===== 衣柜换装 ===== -->
-  <div id="closet">
-    <div class=" closetbox">
-      <div class="chead">
-        <span class="ctitle">👗 衣柜</span>
-        <button id="closetClose">✕</button>
+  <!-- ===== 衣柜换装（整页）===== -->
+  <div id="closet" class="fullpage">
+    <div class="fphead">
+      <span class="fptitle">👗 衣柜</span>
+      <button id="closetClose" class="fpclose">✕</button>
+    </div>
+    <div class="ctip">给小昼戴上喜欢的小饰品~</div>
+    <div id="closetItems"></div>
+  </div>
+
+  <!-- ===== 我的（陪伴数据 + 小昼日记设置 + 聊天）===== -->
+  <div id="mepage" class="fullpage">
+    <div class="fphead">
+      <span class="fptitle">🏡 我的</span>
+      <button id="meClose" class="fpclose">✕</button>
+    </div>
+    <div id="meBody">
+      <div class="mecard" id="meStats"></div>
+
+      <button class="mebtn" id="openChat"><span>💬 和小昼聊天</span><span class="mearw">›</span></button>
+
+      <div class="mecard">
+        <div class="mesec">小昼的日记 · AI</div>
+        <div class="mehint">填入你自己的 DeepSeek API Key（只存在你这台设备的浏览器里，不会上传、不进代码）。填好后小昼就能以他的口吻回复/写日记、陪你聊天；不填则用本地暖心话兜底。</div>
+        <label class="melab">API Key</label>
+        <input id="aiKey" class="mein" type="password" placeholder="sk-..." autocomplete="off">
+        <label class="melab">模型</label>
+        <input id="aiModel" class="mein" type="text" placeholder="deepseek-chat">
+        <label class="metog"><input type="checkbox" id="aiEnabled"> 启用小昼 AI</label>
+        <label class="metog"><input type="checkbox" id="aiAuto"> 写完日记自动让小昼回复</label>
+        <div class="mebtns">
+          <button id="aiTest" class="mesmall">测试连接</button>
+          <button id="aiSave" class="mesmall primary">保存</button>
+        </div>
+        <div id="aiStatus" class="mestatus"></div>
       </div>
-      <div class="ctip">给小昼戴上喜欢的小饰品~</div>
-      <div id="closetItems"></div>
+    </div>
+  </div>
+
+  <!-- ===== 和小昼聊天 ===== -->
+  <div id="chat" class="fullpage">
+    <div class="fphead">
+      <span class="fptitle">💬 小昼</span>
+      <button id="chatClose" class="fpclose">✕</button>
+    </div>
+    <div id="chatLog"></div>
+    <div id="chatBar">
+      <input id="chatIn" type="text" maxlength="200" placeholder="和小昼说点什么…">
+      <button id="chatSend">发送</button>
     </div>
   </div>
 
@@ -126,6 +175,6 @@
     <div class="n" data-nav="me"><span class="ico" data-ico="person"></span>我的</div>
   </div>
 </div>
-<script src="game.js?v=8"></script>
+<script src="game.js?v=9"></script>
 </body>
 </html>
