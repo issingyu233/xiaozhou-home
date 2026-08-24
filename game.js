@@ -162,6 +162,7 @@ const CATALOG=[
   {id:'snack',name:'小点心',cat:'deco',img:'cc_snack.png',w:45,h:25,price:15},
 ];
 const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
+const AV='?a=13';   // 图片资源版本号（改素材时+1，强制浏览器刷新缓存）
 const STARTER_OWNED=CATALOG.filter(c=>c.price===0).map(c=>c.id);
 
 /* 房间 */
@@ -234,12 +235,12 @@ let edit=false, selected=null;
 /* 当前房间 */
 function cur(){ if(!S.rooms[S.room]) S.rooms[S.room]=initRoom(S.room); return S.rooms[S.room]; }
 function applyFloor(){
-  floorEl.style.background=`url('${FLOORS[cur().floor].img}') repeat`;
+  floorEl.style.background=`url('${FLOORS[cur().floor].img}${AV}') repeat`;
   floorEl.style.backgroundSize='40px 40px';
 }
 function applyRoom(){
   const rm=ROOMMAP[S.room];
-  wallEl.style.background=`url('${rm.wall}') repeat`; wallEl.style.backgroundSize='27px auto';
+  wallEl.style.background=`url('${rm.wall}${AV}') repeat`; wallEl.style.backgroundSize='27px auto';
   applyFloor();
   const tag=document.getElementById('roomName'); if(tag) tag.textContent=rm.icon+' '+rm.name;
 }
@@ -291,7 +292,7 @@ function renderPlaced(){
     el.style.width=w+'px'; el.style.height=h+'px';
     el.style.left=it.x+'px'; el.style.top=it.y+'px';
     el.style.transform=`rotate(${rot}deg) scaleX(${it.f?-1:1})`;
-    const im=document.createElement('img'); im.src=img; el.appendChild(im);
+    const im=document.createElement('img'); im.src=img+AV; el.appendChild(im);
     room.appendChild(el);
     makeDraggable(el,'furn');
   });
@@ -390,7 +391,7 @@ function renderShop(){
   CATALOG.filter(c=>c.price>0).forEach(c=>{
     const owned=S.owned.includes(c.id), can=S.coins>=c.price;
     const it=document.createElement('div'); it.className='sitem';
-    it.innerHTML=`<div class="pic"><img src="${c.img}"></div><div class="nm">${c.name}</div>`+
+    it.innerHTML=`<div class="pic"><img src="${c.img}${AV}"></div><div class="nm">${c.name}</div>`+
       (owned?`<div class="price got">已拥有</div>`:`<div class="price${can?'':' no'}"><span class="ci"></span>${c.price}</div>`);
     const ci=it.querySelector('.ci'); if(ci) ci.innerHTML=svgIcon('coin',12);
     if(!owned) it.onclick=()=>buy(c.id);
@@ -653,7 +654,7 @@ function renderTray(){
   const box=document.getElementById('items'); box.innerHTML='';
   if(curCat==='floor'){
     FLOORS.forEach((fl,i)=>{ const it=document.createElement('div'); it.className='item floor'+(i===cur().floor?' on':'');
-      const sw=document.createElement('div'); sw.className='sw'; sw.style.background=`url('${fl.img}') repeat`; sw.style.backgroundSize='20px 20px';
+      const sw=document.createElement('div'); sw.className='sw'; sw.style.background=`url('${fl.img}${AV}') repeat`; sw.style.backgroundSize='20px 20px';
       it.appendChild(sw); it.title=fl.name;
       it.onclick=()=>{ cur().floor=i; applyFloor(); save(); renderTray(); bubble('换地板咯~'); };
       box.appendChild(it); });
@@ -661,7 +662,7 @@ function renderTray(){
     const list=CATALOG.filter(c=>c.cat===curCat && S.owned.includes(c.id));
     if(!list.length){ const e=document.createElement('div'); e.style.cssText='color:#a58a5a;font-size:11px;padding:14px 8px;'; e.textContent='这类还没有家具，去商店买几件吧~'; box.appendChild(e); }
     list.forEach(c=>{ const it=document.createElement('div'); it.className='item';
-      const img=document.createElement('img'); img.src=c.img; it.appendChild(img); it.title=c.name;
+      const img=document.createElement('img'); img.src=c.img+AV; it.appendChild(img); it.title=c.name;
       it.onclick=()=>{ cur().placed.push({id:c.id,
         x:Math.round((room.clientWidth-c.w)/2/CELL)*CELL, y:Math.round(room.clientHeight*0.42/CELL)*CELL, f:0,r:0,dir:0});
         save(); renderPlaced(); bubble('放好啦，拖我摆位置~'); };
