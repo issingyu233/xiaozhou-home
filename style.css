@@ -110,6 +110,31 @@ svg{display:block;shape-rendering:crispEdges;}
 .sitem .price.got{color:#8aa06a;border-color:#c2d0a0;background:#eef2df;}
 #shopmsg{text-align:center;font-size:12px;color:#7a4f2e;min-height:22px;padding:3px 10px 8px;opacity:0;transition:opacity .2s;}
 
+/* 每日签到 */
+#checkin{position:absolute;inset:0;z-index:31;display:none;align-items:center;justify-content:center;background:rgba(50,35,25,.45);}
+.cibox{width:90%;max-width:360px;display:flex;flex-direction:column;background:#fdf3dc;border:3px solid #3a281d;border-radius:14px;box-shadow:2px 4px 0 rgba(58,40,29,.3);overflow:hidden;animation:pkup .28s cubic-bezier(.34,1.56,.64,1);}
+.cihead{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:3px solid #e6cfa2;}
+.cihead .cititle{font-size:15px;color:#7a4f2e;flex:1;}
+.cihead #checkinClose{width:30px;height:30px;border:2px solid #3a281d;background:#fff7ea;border-radius:8px;color:#7a4f2e;font-size:14px;cursor:pointer;box-shadow:1px 2px 0 rgba(58,40,29,.25);}
+.citip{font-size:11.5px;color:#8a6a4a;line-height:1.6;padding:9px 14px 4px;}
+#checkinDays{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 14px 4px;}
+.cd{position:relative;background:#fff7ea;border:2px solid #e0c088;border-radius:10px;padding:7px 3px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden;}
+.cd .cdn{font-size:10px;color:#8a6a4a;}
+.cd .cdi{display:flex;align-items:center;gap:2px;height:15px;}
+.cd .cdi .ci{display:flex;align-items:center;}
+.cd .cda{font-size:10px;color:#c8912a;white-space:nowrap;}
+.cd.gem{border-color:#c9a6e6;background:#f6effc;}
+.cd.gem .cda{color:#9a6ec8;}
+.cd.today{border-color:#3a281d;background:#fff2d0;box-shadow:1px 2px 0 rgba(58,40,29,.22);}
+.cd.today::after{content:'今天';position:absolute;top:0;right:0;font-size:8px;color:#fff;background:#e0885a;padding:1px 4px;border-radius:0 8px 0 7px;}
+.cd.done{opacity:.62;}
+.cd .cdok{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;color:#5aa050;background:rgba(255,247,234,.55);}
+#checkinFoot{display:flex;flex-direction:column;align-items:center;gap:9px;padding:10px 14px 15px;}
+#checkinFoot .cistreak{font-size:12px;color:#7a5a3a;}
+#checkinBtn{width:100%;font-size:14px;color:#fff;background:#c99a5e;border:2px solid #3a281d;border-radius:10px;padding:10px 0;cursor:pointer;box-shadow:1px 3px 0 rgba(58,40,29,.28);}
+#checkinBtn:active{transform:translateY(1px);box-shadow:1px 1px 0 rgba(58,40,29,.28);}
+#checkinBtn.done{background:#d8c6a2;color:#8a7a5a;box-shadow:1px 2px 0 rgba(58,40,29,.18);cursor:default;}
+
 /* 日记：子视图切换 + 日记本 */
 .mtabs{display:flex;gap:6px;padding:8px 12px 0;}
 .mtab{flex:1;text-align:center;font-size:12px;color:#8a6a4a;padding:6px 0;background:#f0e0c2;border:2px solid #cbb083;border-radius:8px 8px 0 0;cursor:pointer;}

@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>夏以昼喂养模拟器</title>
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 <div id="app">
@@ -85,6 +85,22 @@
       </div>
       <div id="shopitems"></div>
       <div id="shopmsg"></div>
+    </div>
+  </div>
+
+  <!-- ===== 每日签到 ===== -->
+  <div id="checkin">
+    <div class="cibox">
+      <div class="cihead">
+        <span class="cititle">🗓 每日签到</span>
+        <button id="checkinClose">✕</button>
+      </div>
+      <div class="citip">每天来看看小昼，就有金币可以拿~ 连签 7 天还有钻石！</div>
+      <div id="checkinDays"></div>
+      <div id="checkinFoot">
+        <span class="cistreak">已连续陪伴小昼 0 天</span>
+        <button id="checkinBtn">领取今日奖励</button>
+      </div>
     </div>
   </div>
 
@@ -175,6 +191,6 @@
     <div class="n" data-nav="me"><span class="ico" data-ico="person"></span>我的</div>
   </div>
 </div>
-<script src="game.js?v=10"></script>
+<script src="game.js?v=11"></script>
 </body>
 </html>

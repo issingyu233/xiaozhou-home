@@ -144,22 +144,6 @@ const CATALOG=[
   {id:'bathmat',  name:'地垫',  cat:'deco', img:'cc_bathmat.png',   w:40, h:46,  price:15, flat:true},
   {id:'rug_blue', name:'蓝地毯',cat:'deco', img:'cc_rug_blue.png',  w:100,h:50,  price:30, flat:true},
   {id:'rug_green',name:'绿地毯',cat:'deco', img:'cc_rug_green.png', w:100,h:50,  price:30, flat:true},
-  // —— 厨房套件 + 更多摆件 ——
-  {id:'tbl_green',name:'格纹圆桌',cat:'furn',img:'cc_tbl_green.png',w:64,h:97,price:45},
-  {id:'tbl_red',name:'红格圆桌',cat:'furn',img:'cc_tbl_red.png',w:64,h:97,price:45},
-  {id:'pendant',name:'吊灯',cat:'deco',img:'cc_pendant.png',w:24,h:84,price:25},
-  {id:'counter_wood',name:'木橱柜',cat:'furn',img:'cc_counter_wood.png',w:48,h:81,price:45},
-  {id:'counter_blue',name:'水槽柜',cat:'furn',img:'cc_counter_blue.png',w:48,h:81,price:45},
-  {id:'counter_green',name:'绿橱柜',cat:'furn',img:'cc_counter_green.png',w:48,h:81,price:45},
-  {id:'stove_blue',name:'蓝灶台',cat:'furn',img:'cc_stove_blue.png',w:48,h:81,price:45},
-  {id:'stove_green',name:'绿灶台',cat:'furn',img:'cc_stove_green.png',w:48,h:81,price:45},
-  {id:'stove',name:'灶台',cat:'furn',img:'cc_stove.png',w:48,h:81,price:40},
-  {id:'fridge_cream',name:'米冰箱',cat:'furn',img:'cc_fridge_cream.png',w:48,h:120,price:70},
-  {id:'fridge_orange',name:'橙冰箱',cat:'furn',img:'cc_fridge_orange.png',w:48,h:120,price:70},
-  {id:'fridge_blue',name:'蓝冰箱',cat:'furn',img:'cc_fridge_blue.png',w:48,h:120,price:70},
-  {id:'cushion',name:'圆坐垫',cat:'deco',img:'cc_cushion.png',w:39,h:48,price:20,flat:true},
-  {id:'box',name:'绿植箱',cat:'deco',img:'cc_box.png',w:30,h:30,price:18},
-  {id:'snack',name:'小点心',cat:'deco',img:'cc_snack.png',w:45,h:25,price:15},
 ];
 const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
 const STARTER_OWNED=CATALOG.filter(c=>c.price===0).map(c=>c.id);
@@ -194,6 +178,7 @@ if(!S.chat) S.chat=[];           // 与小昼的聊天记录 [{r:'me'|'xz',t:''}
 if(!S.zdiary) S.zdiary={};        // 小昼自己写的日记 { 'YYYY-MM-DD': '...' }
 if(S.intimacy==null) S.intimacy=0;   // 亲密度
 if(S.stage==null) S.stage=0;         // 记录上次的成长阶段，用于检测升级
+if(!S.checkin) S.checkin={last:'', streak:0};  // 每日签到：last=上次领取日期, streak=连签天数
 
 /* ---------- 成长阶段 ---------- */
 // 小昼随亲密度 + 累计陪伴天数成长；同一张贴图，靠缩放表现从幼到长大
@@ -747,6 +732,68 @@ function checkStageUp(silent){
 /* 需求缓降 */
 setInterval(()=>{ for(const k in S.needs) S.needs[k]=Math.max(0,S.needs[k]-1); recordTodayMood(); save(); renderNeeds(); }, 20000);
 
+/* ---------- 每日签到 ---------- */
+// 7 天一轮的奖励轨道；第 7 天里程碑额外送钻石，让钻石成为活跃货币
+const CHECKIN=[
+  {coin:20},{coin:25},{coin:30},{coin:35},{coin:40},{coin:50},{coin:60,gem:1},
+];
+function yesterdayKey(){ const d=new Date(); d.setDate(d.getDate()-1); return dateKey(d); }
+function canCheckin(){ return S.checkin.last!==todayKey(); }
+// 今天领取会落在第几天（1-based 在本轮中的位置）
+function checkinDayNum(){
+  let st=S.checkin.streak||0;
+  if(S.checkin.last===todayKey()) return ((st-1+7)%7)+1;      // 今天已领：显示今天所在位
+  if(S.checkin.last===yesterdayKey()) return (st%7)+1;         // 昨天领过：连签+1
+  return 1;                                                    // 断签或首次：从第 1 天起
+}
+const checkinEl=document.getElementById('checkin');
+function openCheckin(){ renderCheckin(); checkinEl.style.display='flex'; }
+function closeCheckin(){ checkinEl.style.display='none'; }
+function renderCheckin(){
+  const claimable=canCheckin();
+  const dayNum=checkinDayNum();            // 今天/上次落位（1-7）
+  const idx=dayNum-1;                       // 0-based
+  const box=document.getElementById('checkinDays'); box.innerHTML='';
+  CHECKIN.forEach((rw,i)=>{
+    // 状态：已领(i<idx，或今天已领且 i<=idx) / 今天可领(i===idx && claimable) / 未来
+    let cls='cd', inner='';
+    const claimedToday = !claimable;
+    const done = i<idx || (claimedToday && i<=idx);
+    const isToday = i===idx && claimable;
+    if(done) cls+=' done'; if(isToday) cls+=' today'; if(rw.gem) cls+=' gem';
+    const icoRow = (rw.gem?`<span class="ci gem">`+svgIcon('gem',13)+`</span>`:'')
+                 + `<span class="ci">`+svgIcon('coin',13)+`</span>`;
+    const amt = (rw.gem?('+'+rw.gem+'钻 '):'')+'+'+rw.coin;
+    inner = `<div class="cdn">第${i+1}天</div><div class="cdi">${icoRow}</div><div class="cda">${amt}</div>`
+          + (done?`<div class="cdok">✓</div>`:'');
+    const cell=document.createElement('div'); cell.className=cls; cell.innerHTML=inner;
+    box.appendChild(cell);
+  });
+  const foot=document.getElementById('checkinFoot');
+  const streakNow = claimable ? (S.checkin.last===yesterdayKey()?S.checkin.streak:0) : S.checkin.streak;
+  foot.querySelector('.cistreak').textContent='已连续陪伴小昼 '+streakNow+' 天';
+  const btn=foot.querySelector('#checkinBtn');
+  if(claimable){ btn.disabled=false; btn.classList.remove('done'); btn.textContent='领取今日奖励'; }
+  else{ btn.disabled=true; btn.classList.add('done'); btn.textContent='今天已签到啦，明天再来~'; }
+}
+function doCheckin(){
+  if(!canCheckin()) return;
+  const dayNum=checkinDayNum(); const rw=CHECKIN[dayNum-1];
+  // 更新连签：昨天领过则 +1，否则重置为 1
+  S.checkin.streak = (S.checkin.last===yesterdayKey()) ? (S.checkin.streak+1) : 1;
+  S.checkin.last = todayKey();
+  S.coins += rw.coin; if(rw.gem) S.gems=(S.gems||0)+rw.gem;
+  addIntimacy(3); save(); renderNeeds(); renderCheckin();
+  bubble(rw.gem?('第'+dayNum+'天！收到钻石礼物，谢谢妹妹~'):('签到成功 +'+rw.coin+'金币~'));
+  petHop();
+}
+document.getElementById('checkinBtn').onclick=doCheckin;
+document.getElementById('checkinClose').onclick=closeCheckin;
+checkinEl.addEventListener('click',e=>{ if(e.target===checkinEl) closeCheckin(); });
+// 入口：点顶部钱包（金币/钻石）打开签到
+const toprEl=document.getElementById('topr');
+if(toprEl){ toprEl.style.cursor='pointer'; toprEl.onclick=()=>{ if(edit) return; openCheckin(); }; }
+
 /* ---------- 启动 ---------- */
 paintIcons();
 cur();          // 确保当前房间已初始化
@@ -760,3 +807,5 @@ recordTodayMood(); save();
 checkStageUp(true);   // 应用当前成长阶段的缩放与徽章（启动不弹升级提示）
 renderOutfit();       // 戴上已选的头顶饰品
 setTimeout(()=>bubble('妹妹，你回来啦~'),700);
+// 每天首次打开自动弹出签到
+if(canCheckin()) setTimeout(openCheckin,1100);
