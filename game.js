@@ -144,6 +144,22 @@ const CATALOG=[
   {id:'bathmat',  name:'地垫',  cat:'deco', img:'cc_bathmat.png',   w:40, h:46,  price:15, flat:true},
   {id:'rug_blue', name:'蓝地毯',cat:'deco', img:'cc_rug_blue.png',  w:100,h:50,  price:30, flat:true},
   {id:'rug_green',name:'绿地毯',cat:'deco', img:'cc_rug_green.png', w:100,h:50,  price:30, flat:true},
+  // —— 厨房套件 + 更多摆件 ——
+  {id:'tbl_green',name:'格纹圆桌',cat:'furn',img:'cc_tbl_green.png',w:64,h:97,price:45},
+  {id:'tbl_red',name:'红格圆桌',cat:'furn',img:'cc_tbl_red.png',w:64,h:97,price:45},
+  {id:'pendant',name:'吊灯',cat:'deco',img:'cc_pendant.png',w:24,h:84,price:25},
+  {id:'counter_wood',name:'木橱柜',cat:'furn',img:'cc_counter_wood.png',w:48,h:81,price:45},
+  {id:'counter_blue',name:'水槽柜',cat:'furn',img:'cc_counter_blue.png',w:48,h:81,price:45},
+  {id:'counter_green',name:'绿橱柜',cat:'furn',img:'cc_counter_green.png',w:48,h:81,price:45},
+  {id:'stove_blue',name:'蓝灶台',cat:'furn',img:'cc_stove_blue.png',w:48,h:81,price:45},
+  {id:'stove_green',name:'绿灶台',cat:'furn',img:'cc_stove_green.png',w:48,h:81,price:45},
+  {id:'stove',name:'灶台',cat:'furn',img:'cc_stove.png',w:48,h:81,price:40},
+  {id:'fridge_cream',name:'米冰箱',cat:'furn',img:'cc_fridge_cream.png',w:48,h:120,price:70},
+  {id:'fridge_orange',name:'橙冰箱',cat:'furn',img:'cc_fridge_orange.png',w:48,h:120,price:70},
+  {id:'fridge_blue',name:'蓝冰箱',cat:'furn',img:'cc_fridge_blue.png',w:48,h:120,price:70},
+  {id:'cushion',name:'圆坐垫',cat:'deco',img:'cc_cushion.png',w:39,h:48,price:20,flat:true},
+  {id:'box',name:'绿植箱',cat:'deco',img:'cc_box.png',w:30,h:30,price:18},
+  {id:'snack',name:'小点心',cat:'deco',img:'cc_snack.png',w:45,h:25,price:15},
 ];
 const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
 const STARTER_OWNED=CATALOG.filter(c=>c.price===0).map(c=>c.id);
