@@ -144,6 +144,22 @@ const CATALOG=[
   {id:'bathmat',  name:'地垫',  cat:'deco', img:'cc_bathmat.png',   w:40, h:46,  price:15, flat:true},
   {id:'rug_blue', name:'蓝地毯',cat:'deco', img:'cc_rug_blue.png',  w:100,h:50,  price:30, flat:true},
   {id:'rug_green',name:'绿地毯',cat:'deco', img:'cc_rug_green.png', w:100,h:50,  price:30, flat:true},
+  // —— 厨房套件 + 更多摆件 ——
+  {id:'tbl_green',name:'格纹圆桌',cat:'furn',img:'cc_tbl_green.png',w:64,h:97,price:45},
+  {id:'tbl_red',name:'红格圆桌',cat:'furn',img:'cc_tbl_red.png',w:64,h:97,price:45},
+  {id:'pendant',name:'吊灯',cat:'deco',img:'cc_pendant.png',w:24,h:84,price:25},
+  {id:'counter_wood',name:'木橱柜',cat:'furn',img:'cc_counter_wood.png',w:48,h:81,price:45},
+  {id:'counter_blue',name:'水槽柜',cat:'furn',img:'cc_counter_blue.png',w:48,h:81,price:45},
+  {id:'counter_green',name:'绿橱柜',cat:'furn',img:'cc_counter_green.png',w:48,h:81,price:45},
+  {id:'stove_blue',name:'蓝灶台',cat:'furn',img:'cc_stove_blue.png',w:48,h:81,price:45},
+  {id:'stove_green',name:'绿灶台',cat:'furn',img:'cc_stove_green.png',w:48,h:81,price:45},
+  {id:'stove',name:'灶台',cat:'furn',img:'cc_stove.png',w:48,h:81,price:40},
+  {id:'fridge_cream',name:'米冰箱',cat:'furn',img:'cc_fridge_cream.png',w:48,h:120,price:70},
+  {id:'fridge_orange',name:'橙冰箱',cat:'furn',img:'cc_fridge_orange.png',w:48,h:120,price:70},
+  {id:'fridge_blue',name:'蓝冰箱',cat:'furn',img:'cc_fridge_blue.png',w:48,h:120,price:70},
+  {id:'cushion',name:'圆坐垫',cat:'deco',img:'cc_cushion.png',w:39,h:48,price:20,flat:true},
+  {id:'box',name:'绿植箱',cat:'deco',img:'cc_box.png',w:30,h:30,price:18},
+  {id:'snack',name:'小点心',cat:'deco',img:'cc_snack.png',w:45,h:25,price:15},
 ];
 const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
 const STARTER_OWNED=CATALOG.filter(c=>c.price===0).map(c=>c.id);
@@ -153,6 +169,7 @@ const ROOMS=[
   {key:'bedroom', name:'卧室',icon:'🛏',wall:'cc_wall.png'},
   {key:'living',  name:'客厅',icon:'🛋',wall:'cc_wall2.png'},
   {key:'bathroom',name:'浴室',icon:'🛁',wall:'cc_bathwall.png'},
+  {key:'kitchen', name:'厨房',icon:'🍳',wall:'cc_kitwall.png'},
 ];
 const ROOMMAP=Object.fromEntries(ROOMS.map(r=>[r.key,r]));
 
@@ -246,12 +263,19 @@ function bathroomStarter(cw,ch){ return [
   put('bathmat',0.46,0.74,cw,ch), put('bathtub',0.24,0.52,cw,ch), put('toilet',0.55,0.56,cw,ch),
   put('sink',0.76,0.52,cw,ch), put('mirror',0.76,0.27,cw,ch), put('plant',0.92,0.70,cw,ch),
 ]; }
+function kitchenStarter(cw,ch){ return [
+  put('fridge_cream',0.14,0.40,cw,ch), put('counter_wood',0.35,0.49,cw,ch), put('stove',0.51,0.49,cw,ch),
+  put('counter_blue',0.67,0.49,cw,ch), put('counter_green',0.83,0.49,cw,ch),
+  put('tbl_green',0.50,0.74,cw,ch), put('snack',0.50,0.68,cw,ch),
+]; }
 function initRoom(key){
   const cw=room.clientWidth, ch=room.clientHeight;
   if(key==='living'){ ['sofa_green','coffee','rug_orange','armchair','fireplace'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
     return {floor:0, placed:livingStarter(cw,ch), pet:petDefault(cw,ch)}; }
   if(key==='bathroom'){ ['bathtub','sink','toilet','mirror','bathmat'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
     return {floor:3, placed:bathroomStarter(cw,ch), pet:petDefault(cw,ch)}; }  // floor 3 = 蓝瓷砖
+  if(key==='kitchen'){ ['fridge_cream','stove','counter_wood','counter_blue','counter_green','tbl_green','snack'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
+    return {floor:2, placed:kitchenStarter(cw,ch), pet:petDefault(cw,ch)}; }  // floor 2 = 石板
   return {floor:0, placed:bedroomStarter(cw,ch), pet:petDefault(cw,ch)};
 }
 function petDefault(cw,ch){ return {x:Math.round(cw/2-48), y:Math.round(ch*0.58)}; }
@@ -665,6 +689,10 @@ document.querySelectorAll('[data-care]').forEach(b=>{
     if(k==='clean' && S.room!=='bathroom'){          // 洗澡要去浴室
       S.room='bathroom'; save(); hideSelbar(); applyRoom(); renderPlaced(); placePet();
       bubble('去浴室洗香香~');
+    }
+    if(k==='food' && S.room!=='kitchen'){             // 喂食要去厨房
+      S.room='kitchen'; save(); hideSelbar(); applyRoom(); renderPlaced(); placePet();
+      bubble('去厨房吃好吃的~');
     }
     S.needs[map[k]]=Math.min(100,S.needs[map[k]]+18);
     if(k!=='pet') S.needs.mood=Math.min(100,S.needs.mood+6);
