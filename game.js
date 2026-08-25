@@ -197,6 +197,9 @@ if(!S.zdiary) S.zdiary={};        // 小昼自己写的日记 { 'YYYY-MM-DD': '.
 if(S.intimacy==null) S.intimacy=0;   // 亲密度
 if(S.stage==null) S.stage=0;         // 记录上次的成长阶段，用于检测升级
 if(!S.checkin) S.checkin={last:'', streak:0};  // 每日签到：last=上次领取日期, streak=连签天数
+if(!S.stats) S.stats={care:0, pet:0, food:0, clean:0, energy:0, chat:0, maxStreak:0, outfits:[]};  // 累计统计（成就用）
+if(!S.stats.outfits) S.stats.outfits=[];
+if(!S.achv) S.achv=[];   // 已解锁成就 id 列表
 
 /* ---------- 成长阶段 ---------- */
 // 小昼随亲密度 + 累计陪伴天数成长；同一张贴图，靠缩放表现从幼到长大
@@ -425,8 +428,10 @@ function renderCloset(){
   const box=document.getElementById('closetItems'); box.innerHTML='';
   ACC.forEach(a=>{ const it=document.createElement('div'); it.className='citem'+(a.key===S.outfit?' on':'');
     it.innerHTML='<div class="cpic">'+(a.g?accSvg(a.key,Math.min(a.size,34)):'<span class="cnone">∅</span>')+'</div><div class="cnm">'+a.name+'</div>';
-    it.onclick=()=>{ S.outfit=a.key; save(); renderOutfit(); renderCloset();
-      bubble(a.g?('戴上「'+a.name+'」啦~'):'摘下来啦~'); };
+    it.onclick=()=>{ S.outfit=a.key;
+      if(a.g && !S.stats.outfits.includes(a.key)) S.stats.outfits.push(a.key);
+      save(); renderOutfit(); renderCloset();
+      bubble(a.g?('戴上「'+a.name+'」啦~'):'摘下来啦~'); checkAchv(); };
     box.appendChild(it); });
 }
 document.getElementById('closetClose').onclick=()=>{ closeCloset(); setNav('home'); };
@@ -498,6 +503,7 @@ function buildPicker(){
     const prev=S.moods[pickKey]||{}; S.moods[pickKey]={v:pickV, m:true, note:note, reply:prev.reply};
     if(!note) delete S.moods[pickKey].reply;
     save(); closePicker(); if(diaryTab==='list') renderDiaryList(); else renderMood();
+    checkAchv();
     if(pickToday) bubble(note?'今天的日记记好啦~':'今天心情：'+MOOD_META[pickV].name+'~');
     if(note && S.ai.enabled && S.ai.auto){ xzhouReply(pickKey).then(()=>{ if(moodPage.style.display!=='none'&&diaryTab==='list') renderDiaryList(); }); }
   };
@@ -549,7 +555,8 @@ async function xzhouDiary(dk){
   save();
 }
 async function xzhouChatSend(text){
-  S.chat.push({r:'me',t:text}); if(S.chat.length>40) S.chat=S.chat.slice(-40); save(); renderChat(true);
+  S.chat.push({r:'me',t:text}); if(S.chat.length>40) S.chat=S.chat.slice(-40);
+  S.stats.chat=(S.stats.chat||0)+1; save(); renderChat(true); checkAchv();
   try{ const hist=S.chat.filter(m=>m.t).slice(-12).map(m=>({role:m.r==='me'?'user':'assistant',content:m.t}));
     const txt=await aiCall([{role:'system',content:XZHOU_SYS+' '+stateBrief()},...hist]); S.chat.push({r:'xz',t:txt}); }
   catch(e){ S.chat.push({r:'xz',t:e.fallback?pick(FB_CHAT):('（没连上呢…'+(e.message||'')+' 去「我的」检查下设置吧）')}); }
@@ -602,6 +609,7 @@ function renderMe(){
   document.getElementById('aiEnabled').checked=!!S.ai.enabled;
   document.getElementById('aiAuto').checked=!!S.ai.auto;
   document.getElementById('aiStatus').textContent=(S.ai.enabled&&S.ai.key)?'已启用 · 小昼会用 AI 回应你':'未启用 · 现在用本地暖心话兜底';
+  renderAchv();
 }
 document.getElementById('meClose').onclick=()=>{ closeMe(); setNav('home'); };
 document.getElementById('aiSave').onclick=()=>{
@@ -697,9 +705,11 @@ document.querySelectorAll('[data-care]').forEach(b=>{
     }
     S.needs[map[k]]=Math.min(100,S.needs[map[k]]+18);
     if(k!=='pet') S.needs.mood=Math.min(100,S.needs.mood+6);
-    S.coins+=1; addIntimacy(4); recordTodayMood(); save(); renderNeeds();
+    S.coins+=1; addIntimacy(4); recordTodayMood();
+    S.stats.care++; if(S.stats[k]!=null) S.stats[k]++; save(); renderNeeds();
     const up=checkStageUp();
     if(!up){ const t=CARE_TXT[k]; bubble(t[Math.floor(Math.random()*t.length)]); petHop(); }
+    checkAchv();
   };
 });
 petEl.addEventListener('click',e=>{ if(edit) return; S.needs.mood=Math.min(100,S.needs.mood+4); addIntimacy(1); save(); renderNeeds();
@@ -752,7 +762,7 @@ function applyGrowth(){
 function checkStageUp(silent){
   const idx=stageIndex();
   if(idx>(S.stage||0)){ S.stage=idx; save(); applyGrowth();
-    if(!silent){ petHop(); setTimeout(()=>bubble('小昼长大啦，现在是'+STAGES[idx].name+'~'),120); }
+    if(!silent){ petHop(); setTimeout(()=>bubble('小昼长大啦，现在是'+STAGES[idx].name+'~'),120); checkAchv(); }
     return true;
   }
   S.stage=idx; applyGrowth(); return false;
@@ -812,9 +822,10 @@ function doCheckin(){
   S.checkin.streak = (S.checkin.last===yesterdayKey()) ? (S.checkin.streak+1) : 1;
   S.checkin.last = todayKey();
   S.coins += rw.coin; if(rw.gem) S.gems=(S.gems||0)+rw.gem;
-  addIntimacy(3); save(); renderNeeds(); renderCheckin();
+  addIntimacy(3); S.stats.maxStreak=Math.max(S.stats.maxStreak||0, S.checkin.streak);
+  save(); renderNeeds(); renderCheckin();
   bubble(rw.gem?('第'+dayNum+'天！收到钻石礼物，谢谢妹妹~'):('签到成功 +'+rw.coin+'金币~'));
-  petHop();
+  petHop(); checkAchv();
 }
 document.getElementById('checkinBtn').onclick=doCheckin;
 document.getElementById('checkinClose').onclick=closeCheckin;
@@ -822,6 +833,81 @@ checkinEl.addEventListener('click',e=>{ if(e.target===checkinEl) closeCheckin();
 // 入口：点顶部钱包（金币/钻石）打开签到
 const toprEl=document.getElementById('topr');
 if(toprEl){ toprEl.style.cursor='pointer'; toprEl.onclick=()=>{ if(edit) return; openCheckin(); }; }
+
+/* ---------- 成就 / 里程碑 ---------- */
+// 靠已有存档 + S.stats 累计推导进度；首次达成发金币（部分里程碑额外送钻石）
+function furnOwnedCount(){ return CATALOG.filter(c=>c.cat==='furn' && S.owned.includes(c.id)).length; }
+function diaryCount(){ return Object.values(S.moods).filter(r=>r&&r.note).length; }
+const ACHV=[
+  {id:'meet',    spr:'🏡', name:'初见小昼',   desc:'和小昼一起住进小屋',   prog:()=>[1,1]},
+  {id:'care50',  spr:'🧡', name:'悉心照料',   desc:'累计照料 50 次',       prog:()=>[S.stats.care,50]},
+  {id:'care200', spr:'💛', name:'无微不至',   desc:'累计照料 200 次',      prog:()=>[S.stats.care,200], gem:1},
+  {id:'day7',    spr:'📅', name:'陪伴一周',   desc:'陪伴小昼满 7 天',      prog:()=>[daysCount(),7]},
+  {id:'day30',   spr:'🌙', name:'陪伴满月',   desc:'陪伴小昼满 30 天',     prog:()=>[daysCount(),30], gem:2},
+  {id:'streak7', spr:'✨', name:'签到达人',   desc:'连续签到达到 7 天',    prog:()=>[S.stats.maxStreak,7]},
+  {id:'intim500',spr:'💞', name:'亲密无间',   desc:'亲密度达到 500',       prog:()=>[S.intimacy||0,500], gem:1},
+  {id:'youth',   spr:'🌸', name:'一同长大',   desc:'陪小昼成长为青年',     prog:()=>[stageIndex(),2], gem:1},
+  {id:'furn20',  spr:'🛋', name:'小小收藏家', desc:'拥有 20 件家具',       prog:()=>[furnOwnedCount(),20]},
+  {id:'dressup', spr:'👗', name:'今日穿搭',   desc:'给小昼换一次装扮',     prog:()=>[S.stats.outfits.length,1]},
+  {id:'chat10',  spr:'💬', name:'有话同你说', desc:'和小昼聊天 10 句',     prog:()=>[S.stats.chat,10]},
+  {id:'diary5',  spr:'📖', name:'日记作家',   desc:'写下 5 篇日记',        prog:()=>[diaryCount(),5]},
+];
+const ACHV_COIN=40;
+// 检查并解锁新达成的成就；返回新解锁列表
+function checkAchv(silent){
+  const newly=[];
+  ACHV.forEach(a=>{ if(S.achv.includes(a.id)) return;
+    const p=a.prog(); if(p[0]>=p[1]){ S.achv.push(a.id); newly.push(a);
+      S.coins+=ACHV_COIN; if(a.gem) S.gems=(S.gems||0)+a.gem; } });
+  if(newly.length){ save(); renderNeeds();
+    if(!silent){ achvToast(newly); if(mePage.style.display!=='none') renderAchv(); } }
+  return newly;
+}
+// 成就解锁小提示（暖色卡片，逐个排队弹出）
+let achvQueue=[];
+function achvToast(list){ achvQueue.push(...list); if(achvQueue._on) return; achvQueue._on=true; nextToast(); }
+function nextToast(){
+  if(!achvQueue.length){ achvQueue._on=false; return; }
+  const a=achvQueue.shift();
+  let t=document.getElementById('achvToast');
+  if(!t){ t=document.createElement('div'); t.id='achvToast'; document.getElementById('app').appendChild(t); }
+  t.innerHTML='<span class="atSpr">'+a.spr+'</span><span class="atTxt"><b>成就达成 · '+a.name+'</b>'
+    +'<i>'+a.desc+'　+'+ACHV_COIN+'金币'+(a.gem?' +'+a.gem+'钻':'')+'</i></span>';
+  t.classList.add('show');
+  clearTimeout(nextToast._t); nextToast._t=setTimeout(()=>{ t.classList.remove('show');
+    setTimeout(nextToast,320); }, 2200);
+}
+function renderAchv(){
+  const box=document.getElementById('meAchv'); if(!box) return;
+  const got=S.achv.length;
+  let h='<div class="mesec">成就 · 里程碑 <span class="achvCnt">'+got+' / '+ACHV.length+'</span></div><div class="achvGrid">';
+  ACHV.forEach(a=>{ const done=S.achv.includes(a.id); const p=a.prog();
+    const cur=Math.min(p[0],p[1]); const pct=Math.round(cur/p[1]*100);
+    h+='<div class="achv'+(done?' done':'')+'">'
+      +'<span class="aSpr">'+a.spr+'</span>'
+      +'<span class="aName">'+a.name+'</span>'
+      +'<span class="aDesc">'+a.desc+'</span>'
+      +(done?'<span class="aGot">✓ 已达成</span>'
+            :'<span class="aBar"><i style="width:'+pct+'%"></i></span><span class="aNum">'+cur+' / '+p[1]+'</span>')
+      +'</div>';
+  });
+  h+='</div>';
+  box.innerHTML=h;
+}
+
+/* ---------- 昼夜氛围（纯 CSS 光线，跟随真实时间）---------- */
+const PHASES=[
+  {n:'凌晨', from:0,  bg:'linear-gradient(180deg,rgba(28,32,74,.44),rgba(44,42,72,.30))', hi:['这么早呀…困不困？再抱一会儿~','天还没亮呢，妹妹要注意休息哦。']},
+  {n:'清晨', from:6,  bg:'linear-gradient(180deg,rgba(255,214,150,.13),rgba(255,228,185,.05))', hi:['早安呀妹妹~ 今天也要元气满满！','清晨的阳光好舒服，你来啦~']},
+  {n:'白天', from:9,  bg:'transparent', hi:['妹妹，你回来啦~','今天过得怎么样呀？']},
+  {n:'午后', from:13, bg:'linear-gradient(180deg,rgba(255,196,120,.08),rgba(255,210,150,.03))', hi:['午后暖洋洋的，一起晒晒太阳吧~','喝口水休息一下嘛~']},
+  {n:'黄昏', from:17, bg:'linear-gradient(180deg,rgba(255,150,70,.17),rgba(255,120,80,.10))', hi:['夕阳好好看，你也来看看~','天要黑啦，今天辛苦你了。']},
+  {n:'夜晚', from:19, bg:'linear-gradient(180deg,rgba(28,32,78,.34),rgba(52,42,72,.24))', hi:['这么晚还来看我呀，谢谢你~','夜深了，陪我说说话好不好~']},
+];
+function phaseNow(){ const h=new Date().getHours(); let p=PHASES[0];
+  for(const x of PHASES){ if(h>=x.from) p=x; } return p; }
+function applyAmbient(){ const el=document.getElementById('ambient'); if(el) el.style.background=phaseNow().bg; }
+function greetByPhase(){ const g=phaseNow().hi; return g[Math.floor(Math.random()*g.length)]; }
 
 /* ---------- 启动 ---------- */
 paintIcons();
@@ -835,6 +921,9 @@ renderNeeds();
 recordTodayMood(); save();
 checkStageUp(true);   // 应用当前成长阶段的缩放与徽章（启动不弹升级提示）
 renderOutfit();       // 戴上已选的头顶饰品
-setTimeout(()=>bubble('妹妹，你回来啦~'),700);
+checkAchv(true);      // 静默解锁已满足的成就（含「初见小昼」），不弹提示不刷屏
+applyAmbient();       // 按当前时间给房间上光线
+setInterval(applyAmbient, 5*60*1000);   // 每5分钟跟随时间更新
+setTimeout(()=>bubble(greetByPhase()),700);
 // 每天首次打开自动弹出签到
 if(canCheckin()) setTimeout(openCheckin,1100);
