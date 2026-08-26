@@ -151,10 +151,10 @@ const CATALOG=[
   // —— 厨房套件 + 更多摆件 ——
   {id:'tbl_green',name:'格纹圆桌',cat:'furn',img:'cc_tbl_green.png',w:64,h:97,price:45},
   {id:'tbl_red',name:'红格圆桌',cat:'furn',img:'cc_tbl_red.png',w:64,h:97,price:45},
-  {id:'pendant',name:'吊灯',cat:'deco',img:'cc_pendant.png',w:24,h:84,price:25},
-  {id:'counter_wood',name:'木橱柜',cat:'furn',img:'cc_counter_wood.png',w:30,h:110,price:45},
-  {id:'counter_blue',name:'水槽柜',cat:'furn',img:'cc_counter_blue.png',w:30,h:110,price:45},
-  {id:'counter_green',name:'绿橱柜',cat:'furn',img:'cc_counter_green.png',w:30,h:110,price:45},
+  {id:'pendant',name:'吊灯',cat:'deco',img:'cc_pendant.png',w:24,h:30,price:25},
+  {id:'counter_wood',name:'木橱柜',cat:'furn',img:'cc_counter_wood.png',w:30,h:50,price:45},
+  {id:'counter_blue',name:'水槽柜',cat:'furn',img:'cc_counter_blue.png',w:30,h:50,price:45},
+  {id:'counter_green',name:'绿橱柜',cat:'furn',img:'cc_counter_green.png',w:30,h:50,price:45},
   {id:'stove_blue',name:'蓝灶台',cat:'furn',img:'cc_stove_blue.png',w:48,h:81,price:45},
   {id:'stove_green',name:'绿灶台',cat:'furn',img:'cc_stove_green.png',w:48,h:81,price:45},
   {id:'stove',name:'灶台',cat:'furn',img:'cc_stove.png',w:48,h:81,price:40},
@@ -166,7 +166,7 @@ const CATALOG=[
   {id:'snack',name:'小点心',cat:'deco',img:'cc_snack.png',w:45,h:25,price:15},
 ];
 const CATMAP=Object.fromEntries(CATALOG.map(c=>[c.id,c]));
-const AV='?a=13';   // 图片资源版本号（改素材时+1，强制浏览器刷新缓存）
+const AV='?a=14';   // 图片资源版本号（改素材时+1，强制浏览器刷新缓存）
 const STARTER_OWNED=CATALOG.filter(c=>c.price===0).map(c=>c.id);
 
 /* 房间 */
@@ -277,7 +277,7 @@ function bathroomStarter(cw,ch){ return [
 function kitchenStarter(cw,ch){ return [
   put('fridge_cream',0.14,0.40,cw,ch), put('counter_wood',0.35,0.49,cw,ch), put('stove',0.51,0.49,cw,ch),
   put('counter_blue',0.67,0.49,cw,ch), put('counter_green',0.83,0.49,cw,ch),
-  put('tbl_green',0.50,0.74,cw,ch), put('string',0.50,0.14,cw,ch),
+  put('tbl_green',0.50,0.74,cw,ch), put('string',0.50,0.24,cw,ch),
 ]; }
 function initRoom(key){
   const cw=room.clientWidth, ch=room.clientHeight;
@@ -292,7 +292,7 @@ function initRoom(key){
 function petDefault(cw,ch){ return {x:Math.round(cw/2-48), y:Math.round(ch*0.58)}; }
 /* 每个房间该有的灯 + 位置（给老存档补灯）*/
 const ROOM_LAMP={bedroom:'lamp',living:'floorlamp',bathroom:'lantern',kitchen:'string'};
-const ROOM_LAMP_POS={bedroom:[0.47,0.44],living:[0.92,0.44],bathroom:[0.10,0.30],kitchen:[0.50,0.14]};
+const ROOM_LAMP_POS={bedroom:[0.47,0.44],living:[0.92,0.44],bathroom:[0.10,0.30],kitchen:[0.50,0.24]};
 function ensureRoomLamps(){
   const cw=room.clientWidth||360, ch=room.clientHeight||500;
   for(const key in ROOM_LAMP){
@@ -300,6 +300,8 @@ function ensureRoomLamps(){
     const hasLight=rm.placed.some(p=>CATMAP[p.id]&&CATMAP[p.id].light);
     if(!hasLight){ const id=ROOM_LAMP[key]; if(!S.owned.includes(id)) S.owned.push(id);
       const pos=ROOM_LAMP_POS[key]; rm.placed.push(put(id,pos[0],pos[1],cw,ch)); }
+    // 顶灯/串灯太靠上会被顶部界面挡住，往下挪一点
+    rm.placed.forEach(p=>{ if((p.id==='string'||p.id==='pendant') && p.y < ch*0.18){ p.y=Math.round(ch*0.22); } });
   }
   save();
 }
