@@ -101,7 +101,7 @@ const CATALOG=[
   {id:'bed',      name:'蓝床',  cat:'furn', img:'cc_bed.png',        w:72, h:106, price:0,
     dirs:[{img:'cc_bed.png',w:72,h:106},{img:'cc_bed_h.png',w:104,h:72}]},
   {id:'nightstand',name:'床头柜',cat:'furn',img:'cc_nightstand.png', w:70, h:58,  price:0},
-  {id:'lamp',     name:'台灯',  cat:'furn', img:'cc_lamp.png',       w:34, h:78,  price:0},
+  {id:'lamp',     name:'台灯',  cat:'furn', img:'cc_lamp.png',       w:34, h:78,  price:0, light:true},
   {id:'bookshelf',name:'书架',  cat:'furn', img:'cc_bookshelf.png',  w:98, h:110, price:0},
   {id:'rug',      name:'蓝地毯',cat:'deco', img:'cc_rug.png',        w:130,h:82,  price:0, flat:true},
   {id:'plant',    name:'绿植',  cat:'deco', img:'cc_plant.png',      w:40, h:68,  price:0},
@@ -134,7 +134,7 @@ const CATALOG=[
   {id:'cabinet',  name:'高柜',  cat:'furn', img:'cc_cabinet.png',   w:40, h:104, price:45},
   {id:'shelf2',   name:'置物架',cat:'furn', img:'cc_shelf2.png',    w:92, h:104, price:50},
   {id:'dtable',   name:'方桌',  cat:'furn', img:'cc_dtable.png',    w:76, h:71,  price:40},
-  {id:'floorlamp',name:'落地灯',cat:'furn', img:'cc_floorlamp.png', w:34, h:78,  price:35},
+  {id:'floorlamp',name:'落地灯',cat:'furn', img:'cc_floorlamp.png', w:34, h:78,  price:35, light:true},
   {id:'toilet',   name:'马桶',  cat:'furn', img:'cc_toilet.png',    w:34, h:88,  price:30},
   {id:'bathtub',  name:'浴缸',  cat:'furn', img:'cc_bathtub.png',   w:120,h:70,  price:70},
   {id:'sink',     name:'洗手台',cat:'furn', img:'cc_sink.png',      w:56, h:80,  price:35},
@@ -144,6 +144,10 @@ const CATALOG=[
   {id:'bathmat',  name:'地垫',  cat:'deco', img:'cc_bathmat.png',   w:40, h:46,  price:15, flat:true},
   {id:'rug_blue', name:'蓝地毯',cat:'deco', img:'cc_rug_blue.png',  w:100,h:50,  price:30, flat:true},
   {id:'rug_green',name:'绿地毯',cat:'deco', img:'cc_rug_green.png', w:100,h:50,  price:30, flat:true},
+  // —— 灯（点一下开关房间的灯）——
+  {id:'lantern',name:'提灯',  cat:'deco', img:'cc_lantern.png', w:22, h:50,  price:30, light:true},
+  {id:'string', name:'串灯',  cat:'deco', img:'cc_string.png',  w:88, h:20,  price:28, light:true},
+  {id:'stars',  name:'星星灯',cat:'deco', img:'cc_stars.png',   w:74, h:34,  price:28, light:true},
   // —— 厨房套件 + 更多摆件 ——
   {id:'tbl_green',name:'格纹圆桌',cat:'furn',img:'cc_tbl_green.png',w:64,h:97,price:45},
   {id:'tbl_red',name:'红格圆桌',cat:'furn',img:'cc_tbl_red.png',w:64,h:97,price:45},
@@ -264,24 +268,24 @@ function bedroomStarter(cw,ch){ return [
 ]; }
 function livingStarter(cw,ch){ return [
   put('rug_orange',0.50,0.66,cw,ch), put('sofa_green',0.34,0.46,cw,ch), put('coffee',0.50,0.60,cw,ch),
-  put('armchair',0.80,0.52,cw,ch), put('fireplace',0.16,0.40,cw,ch), put('plant',0.90,0.72,cw,ch),
+  put('armchair',0.80,0.52,cw,ch), put('fireplace',0.16,0.40,cw,ch), put('floorlamp',0.92,0.44,cw,ch),
 ]; }
 function bathroomStarter(cw,ch){ return [
   put('bathmat',0.46,0.74,cw,ch), put('bathtub',0.24,0.52,cw,ch), put('toilet',0.55,0.56,cw,ch),
-  put('sink',0.76,0.52,cw,ch), put('mirror',0.76,0.27,cw,ch), put('plant',0.92,0.70,cw,ch),
+  put('sink',0.76,0.52,cw,ch), put('mirror',0.76,0.27,cw,ch), put('lantern',0.10,0.30,cw,ch),
 ]; }
 function kitchenStarter(cw,ch){ return [
   put('fridge_cream',0.14,0.40,cw,ch), put('counter_wood',0.35,0.49,cw,ch), put('stove',0.51,0.49,cw,ch),
   put('counter_blue',0.67,0.49,cw,ch), put('counter_green',0.83,0.49,cw,ch),
-  put('tbl_green',0.50,0.74,cw,ch), put('snack',0.50,0.68,cw,ch),
+  put('tbl_green',0.50,0.74,cw,ch), put('string',0.50,0.14,cw,ch),
 ]; }
 function initRoom(key){
   const cw=room.clientWidth, ch=room.clientHeight;
-  if(key==='living'){ ['sofa_green','coffee','rug_orange','armchair','fireplace'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
+  if(key==='living'){ ['sofa_green','coffee','rug_orange','armchair','fireplace','floorlamp'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
     return {floor:0, placed:livingStarter(cw,ch), pet:petDefault(cw,ch)}; }
-  if(key==='bathroom'){ ['bathtub','sink','toilet','mirror','bathmat'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
+  if(key==='bathroom'){ ['bathtub','sink','toilet','mirror','bathmat','lantern'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
     return {floor:3, placed:bathroomStarter(cw,ch), pet:petDefault(cw,ch)}; }  // floor 3 = 蓝瓷砖
-  if(key==='kitchen'){ ['fridge_cream','stove','counter_wood','counter_blue','counter_green','tbl_green','snack'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
+  if(key==='kitchen'){ ['fridge_cream','stove','counter_wood','counter_blue','counter_green','tbl_green','string'].forEach(id=>{ if(!S.owned.includes(id)) S.owned.push(id); });
     return {floor:2, placed:kitchenStarter(cw,ch), pet:petDefault(cw,ch)}; }  // floor 2 = 石板
   return {floor:0, placed:bedroomStarter(cw,ch), pet:petDefault(cw,ch)};
 }
@@ -294,13 +298,15 @@ function renderPlaced(){
     const c=CATMAP[it.id]; if(!c) return;
     let img=c.img,w=c.w,h=c.h,rot=it.r||0;
     if(c.dirs){ const d=c.dirs[(it.dir||0)%c.dirs.length]; img=d.img; w=d.w; h=d.h; rot=0; } // 多方向:换朝向贴图
-    const el=document.createElement('div'); el.className='furn'+(c.flat?' flat':''); el.dataset.idx=idx;
+    const el=document.createElement('div'); el.className='furn'+(c.flat?' flat':'')
+      +(c.light?' lightfx':'')+(c.light&&!cur().dark?' lit':''); el.dataset.idx=idx;
     el.style.width=w+'px'; el.style.height=h+'px';
     el.style.left=it.x+'px'; el.style.top=it.y+'px';
     el.style.transform=`rotate(${rot}deg) scaleX(${it.f?-1:1})`;
     const im=document.createElement('img'); im.src=img+AV; el.appendChild(im);
     room.appendChild(el);
     makeDraggable(el,'furn');
+    if(c.light){ el.addEventListener('click',ev=>{ if(edit) return; ev.stopPropagation(); toggleLight(); }); }
   });
 }
 function makeDraggable(el,kind){
@@ -375,7 +381,6 @@ function setEdit(on){
   document.getElementById('btnDone').style.display=on?'flex':'none';
   document.getElementById('btnShop').style.display=on?'none':'flex';
   document.getElementById('roomsel').style.display=on?'none':'flex';
-  document.getElementById('lightBtn').style.display=on?'none':'flex';
   document.getElementById('nav').style.display=on?'none':'flex';
   document.getElementById('needs').style.display=on?'none':'flex';
   document.getElementById('topr').style.display=on?'none':'flex';
@@ -413,7 +418,6 @@ function buy(id){
 }
 document.getElementById('arwL').onclick=()=>switchRoom(-1);
 document.getElementById('arwR').onclick=()=>switchRoom(1);
-document.getElementById('lightBtn').onclick=toggleLight;
 function setNav(key){ document.querySelectorAll('#nav .n').forEach(n=>n.classList.toggle('on',n.dataset.nav===key)); }
 document.querySelectorAll('#nav .n').forEach(n=>{ n.onclick=()=>{
   const k=n.dataset.nav;
@@ -757,8 +761,8 @@ function maybeWander(){
 function gotoPetRoom(){ if(S.room!==S.petRoom){ S.room=S.petRoom; save(); hideSelbar(); applyRoom(); renderPlaced(); placePet(); applyAmbient(); updatePetPresence(); } }
 
 /* ---------- 开关灯 ---------- */
-function toggleLight(){ if(edit) return; cur().dark=!cur().dark; save(); applyAmbient(); updateLightBtn();
-  bubble(cur().dark?'关灯咯，晚安…':'开灯~ 亮堂多啦！'); }
+function toggleLight(){ if(edit) return; cur().dark=!cur().dark; save(); applyAmbient(); renderPlaced(); updateLightBtn();
+  if(petHere()) bubble(cur().dark?'关灯咯，晚安…':'开灯~ 亮堂多啦！'); }
 function updateLightBtn(){ const b=document.getElementById('lightBtn'); if(!b) return;
   b.classList.toggle('off', !!cur().dark);
   b.querySelector('.lbi').textContent = cur().dark?'🌙':'💡'; }
