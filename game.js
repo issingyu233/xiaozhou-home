@@ -189,6 +189,7 @@ if(!S.owned){ S.owned=[...new Set([...STARTER_OWNED, ...((S.placed||[]).map(p=>p
 if(S.gems==null) S.gems=5;
 if(!S.rooms){ S.rooms={ bedroom:{floor:S.floor||0, placed:S.placed||[], pet:S.pet||null} }; delete S.floor; delete S.placed; delete S.pet; }
 if(!S.room) S.room='bedroom';
+if(!S.petRoom) S.petRoom=S.room||'bedroom';   // 小昼此刻待在哪个房间（不跟随镜头切换）
 if(!S.moods) S.moods={};   // { 'YYYY-MM-DD': {v:0-4, m:是否手动} }
 if(!S.outfit) S.outfit='none';   // 头顶饰品
 if(!S.ai) S.ai={key:'',model:'deepseek-chat',enabled:false,auto:true};  // 小昼AI设置（key只存本地）
@@ -249,7 +250,9 @@ function applyRoom(){
 }
 function switchRoom(d){ if(edit) return;
   const i=ROOMS.findIndex(r=>r.key===S.room); S.room=ROOMS[(i+d+ROOMS.length)%ROOMS.length].key; save();
-  hideSelbar(); applyRoom(); renderPlaced(); placePet(); bubble('来到'+ROOMMAP[S.room].name+'~');
+  hideSelbar(); applyRoom(); renderPlaced(); placePet(); applyAmbient(); updatePetPresence();
+  if(petHere()) bubble(pick(['你找到我啦~','在这儿呢！','嘿嘿，被你发现啦~']));
+  else bubble(ROOMMAP[S.room].name+'…好像没有小昼呀？');
 }
 
 /* 开局布置 */
@@ -372,6 +375,7 @@ function setEdit(on){
   document.getElementById('btnDone').style.display=on?'flex':'none';
   document.getElementById('btnShop').style.display=on?'none':'flex';
   document.getElementById('roomsel').style.display=on?'none':'flex';
+  document.getElementById('lightBtn').style.display=on?'none':'flex';
   document.getElementById('nav').style.display=on?'none':'flex';
   document.getElementById('needs').style.display=on?'none':'flex';
   document.getElementById('topr').style.display=on?'none':'flex';
@@ -409,6 +413,7 @@ function buy(id){
 }
 document.getElementById('arwL').onclick=()=>switchRoom(-1);
 document.getElementById('arwR').onclick=()=>switchRoom(1);
+document.getElementById('lightBtn').onclick=toggleLight;
 function setNav(key){ document.querySelectorAll('#nav .n').forEach(n=>n.classList.toggle('on',n.dataset.nav===key)); }
 document.querySelectorAll('#nav .n').forEach(n=>{ n.onclick=()=>{
   const k=n.dataset.nav;
@@ -695,14 +700,9 @@ const CARE_TXT={pet:['嘿嘿~','舒服…','再摸摸'],food:['谢谢~','好吃�
 document.querySelectorAll('[data-care]').forEach(b=>{
   b.onclick=()=>{ if(edit) return;
     const k=b.dataset.care; const map={pet:'mood',food:'food',clean:'clean',energy:'energy'};
-    if(k==='clean' && S.room!=='bathroom'){          // 洗澡要去浴室
-      S.room='bathroom'; save(); hideSelbar(); applyRoom(); renderPlaced(); placePet();
-      bubble('去浴室洗香香~');
-    }
-    if(k==='food' && S.room!=='kitchen'){             // 喂食要去厨房
-      S.room='kitchen'; save(); hideSelbar(); applyRoom(); renderPlaced(); placePet();
-      bubble('去厨房吃好吃的~');
-    }
+    if(k==='clean'){ S.petRoom='bathroom'; S.room='bathroom'; save(); hideSelbar(); applyRoom(); renderPlaced(); placePet(); applyAmbient(); updatePetPresence(); bubble('去浴室洗香香~'); }
+    else if(k==='food'){ S.petRoom='kitchen'; S.room='kitchen'; save(); hideSelbar(); applyRoom(); renderPlaced(); placePet(); applyAmbient(); updatePetPresence(); bubble('去厨房吃好吃的~'); }
+    else if(!petHere()){ gotoPetRoom(); bubble('小昼在这儿呢~'); }   // 摸摸/哄睡：先找到他
     S.needs[map[k]]=Math.min(100,S.needs[map[k]]+18);
     if(k!=='pet') S.needs.mood=Math.min(100,S.needs.mood+6);
     S.coins+=1; addIntimacy(4); recordTodayMood();
@@ -737,6 +737,31 @@ function placePet(){
 }
 function positionSay(){ sayEl.style.left=(parseInt(petEl.style.left)+petEl.offsetWidth/2)+'px';
   sayEl.style.top=(parseInt(petEl.style.top)-38)+'px'; syncAcc(); }
+
+/* ---------- 小昼在场 / 找小昼 ---------- */
+function petHere(){ return S.room===S.petRoom; }
+function updatePetPresence(){
+  const on=petHere();
+  petEl.style.display=on?'':'none';
+  const a=ACCMAP[S.outfit];
+  petAcc.style.display=(on && a && a.g)?'block':'none';
+  if(!on){ sayEl.style.opacity=0; }
+}
+/* 小昼自己溜达（只在你没看着他那间时换，避免当面消失）*/
+function maybeWander(){
+  if(edit||overlayOpen()||petHere()) return;
+  if(Math.random()<0.5){ const others=ROOMS.filter(r=>r.key!==S.petRoom);
+    S.petRoom=others[Math.floor(Math.random()*others.length)].key; save(); }
+}
+/* 把镜头带到小昼所在房间（照料时用，保证找得到）*/
+function gotoPetRoom(){ if(S.room!==S.petRoom){ S.room=S.petRoom; save(); hideSelbar(); applyRoom(); renderPlaced(); placePet(); applyAmbient(); updatePetPresence(); } }
+
+/* ---------- 开关灯 ---------- */
+function toggleLight(){ if(edit) return; cur().dark=!cur().dark; save(); applyAmbient(); updateLightBtn();
+  bubble(cur().dark?'关灯咯，晚安…':'开灯~ 亮堂多啦！'); }
+function updateLightBtn(){ const b=document.getElementById('lightBtn'); if(!b) return;
+  b.classList.toggle('off', !!cur().dark);
+  b.querySelector('.lbi').textContent = cur().dark?'🌙':'💡'; }
 function bubble(t){ positionSay(); sayEl.textContent=t; sayEl.style.opacity=1;
   clearTimeout(bubble._t); bubble._t=setTimeout(()=>sayEl.style.opacity=0,1800); }
 function petHop(){ const g=STAGES[stageIndex()].grow; petEl.style.animation='none';
@@ -907,7 +932,9 @@ const PHASES=[
 ];
 function phaseNow(){ const h=new Date().getHours(); let p=PHASES[0];
   for(const x of PHASES){ if(h>=x.from) p=x; } return p; }
-function applyAmbient(){ const el=document.getElementById('ambient'); if(el) el.style.background=phaseNow().bg; }
+const DARK_BG='linear-gradient(180deg,rgba(18,20,44,.60),rgba(28,26,46,.50))';   // 关灯：屋子变暗
+function applyAmbient(){ const el=document.getElementById('ambient'); if(!el) return;
+  el.style.background = cur().dark ? DARK_BG : phaseNow().bg; }
 function greetByPhase(){ const g=phaseNow().hi; return g[Math.floor(Math.random()*g.length)]; }
 
 /* ---------- 随机小互动：小昼偶尔冒出气泡 / 掉落可点收集物 ---------- */
@@ -972,6 +999,7 @@ function scheduleIdle(){ setTimeout(()=>{ idleBubble(); scheduleIdle(); }, 45000
 
 /* ---------- 启动 ---------- */
 paintIcons();
+S.room=S.petRoom;   // 打开时先站在小昼所在的房间，能一眼看到他
 cur();          // 确保当前房间已初始化
 applyRoom();
 save();
@@ -983,8 +1011,11 @@ recordTodayMood(); save();
 checkStageUp(true);   // 应用当前成长阶段的缩放与徽章（启动不弹升级提示）
 renderOutfit();       // 戴上已选的头顶饰品
 checkAchv(true);      // 静默解锁已满足的成就（含「初见小昼」），不弹提示不刷屏
-applyAmbient();       // 按当前时间给房间上光线
+applyAmbient();       // 按当前时间给房间上光线（含开关灯状态）
+updatePetPresence();  // 小昼是否在当前房间
+updateLightBtn();     // 灯按钮状态
 setInterval(applyAmbient, 5*60*1000);   // 每5分钟跟随时间更新
+setInterval(maybeWander, 75000);        // 小昼偶尔自己换个房间，等你来找
 setTimeout(()=>bubble(greetByPhase()),700);
 // 每天首次打开自动弹出签到
 if(canCheckin()) setTimeout(openCheckin,1100);
