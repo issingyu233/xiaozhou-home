@@ -896,13 +896,14 @@ function renderAchv(){
 }
 
 /* ---------- 昼夜氛围（纯 CSS 光线，跟随真实时间）---------- */
+// 只做暖色光线氛围，一律很淡、绝不压暗屋子
 const PHASES=[
-  {n:'凌晨', from:0,  bg:'linear-gradient(180deg,rgba(28,32,74,.44),rgba(44,42,72,.30))', hi:['这么早呀…困不困？再抱一会儿~','天还没亮呢，妹妹要注意休息哦。']},
-  {n:'清晨', from:6,  bg:'linear-gradient(180deg,rgba(255,214,150,.13),rgba(255,228,185,.05))', hi:['早安呀妹妹~ 今天也要元气满满！','清晨的阳光好舒服，你来啦~']},
+  {n:'凌晨', from:0,  bg:'linear-gradient(180deg,rgba(255,206,150,.08),rgba(255,220,175,.04))', hi:['这么早呀…困不困？再抱一会儿~','天还没亮呢，妹妹要注意休息哦。']},
+  {n:'清晨', from:6,  bg:'linear-gradient(180deg,rgba(255,224,160,.10),rgba(255,234,195,.04))', hi:['早安呀妹妹~ 今天也要元气满满！','清晨的阳光好舒服，你来啦~']},
   {n:'白天', from:9,  bg:'transparent', hi:['妹妹，你回来啦~','今天过得怎么样呀？']},
-  {n:'午后', from:13, bg:'linear-gradient(180deg,rgba(255,196,120,.08),rgba(255,210,150,.03))', hi:['午后暖洋洋的，一起晒晒太阳吧~','喝口水休息一下嘛~']},
-  {n:'黄昏', from:17, bg:'linear-gradient(180deg,rgba(255,150,70,.17),rgba(255,120,80,.10))', hi:['夕阳好好看，你也来看看~','天要黑啦，今天辛苦你了。']},
-  {n:'夜晚', from:19, bg:'linear-gradient(180deg,rgba(28,32,78,.34),rgba(52,42,72,.24))', hi:['这么晚还来看我呀，谢谢你~','夜深了，陪我说说话好不好~']},
+  {n:'午后', from:13, bg:'linear-gradient(180deg,rgba(255,204,130,.07),rgba(255,216,160,.03))', hi:['午后暖洋洋的，一起晒晒太阳吧~','喝口水休息一下嘛~']},
+  {n:'黄昏', from:17, bg:'linear-gradient(180deg,rgba(255,168,96,.12),rgba(255,150,110,.06))', hi:['夕阳好好看，你也来看看~','天要黑啦，今天辛苦你了。']},
+  {n:'夜晚', from:19, bg:'linear-gradient(180deg,rgba(255,196,128,.11),rgba(255,178,120,.06))', hi:['这么晚还来看我呀，谢谢你~','夜深了，陪我说说话好不好~']},
 ];
 function phaseNow(){ const h=new Date().getHours(); let p=PHASES[0];
   for(const x of PHASES){ if(h>=x.from) p=x; } return p; }
