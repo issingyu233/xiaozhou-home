@@ -290,6 +290,19 @@ function initRoom(key){
   return {floor:0, placed:bedroomStarter(cw,ch), pet:petDefault(cw,ch)};
 }
 function petDefault(cw,ch){ return {x:Math.round(cw/2-48), y:Math.round(ch*0.58)}; }
+/* 每个房间该有的灯 + 位置（给老存档补灯）*/
+const ROOM_LAMP={bedroom:'lamp',living:'floorlamp',bathroom:'lantern',kitchen:'string'};
+const ROOM_LAMP_POS={bedroom:[0.47,0.44],living:[0.92,0.44],bathroom:[0.10,0.30],kitchen:[0.50,0.14]};
+function ensureRoomLamps(){
+  const cw=room.clientWidth||360, ch=room.clientHeight||500;
+  for(const key in ROOM_LAMP){
+    const rm=S.rooms[key]; if(!rm||!rm.placed) continue;   // 没进过的房间由 initRoom 负责
+    const hasLight=rm.placed.some(p=>CATMAP[p.id]&&CATMAP[p.id].light);
+    if(!hasLight){ const id=ROOM_LAMP[key]; if(!S.owned.includes(id)) S.owned.push(id);
+      const pos=ROOM_LAMP_POS[key]; rm.placed.push(put(id,pos[0],pos[1],cw,ch)); }
+  }
+  save();
+}
 
 /* ---------- 家具渲染 ---------- */
 function renderPlaced(){
@@ -1005,6 +1018,7 @@ function scheduleIdle(){ setTimeout(()=>{ idleBubble(); scheduleIdle(); }, 45000
 paintIcons();
 S.room=S.petRoom;   // 打开时先站在小昼所在的房间，能一眼看到他
 cur();          // 确保当前房间已初始化
+ensureRoomLamps();   // 给每个已有房间补上各自的灯（老存档迁移）
 applyRoom();
 save();
 renderPlaced();
