@@ -909,6 +909,66 @@ function phaseNow(){ const h=new Date().getHours(); let p=PHASES[0];
 function applyAmbient(){ const el=document.getElementById('ambient'); if(el) el.style.background=phaseNow().bg; }
 function greetByPhase(){ const g=phaseNow().hi; return g[Math.floor(Math.random()*g.length)]; }
 
+/* ---------- 随机小互动：小昼偶尔冒出气泡 / 掉落可点收集物 ---------- */
+// 只在「家」主视图、非编辑、无弹窗时触发，避免打扰其它页面
+function homeActive(){
+  const nav=document.querySelector('#nav .n[data-nav="home"]');
+  if(!nav||!nav.classList.contains('on')||edit) return false;
+  const sh=document.getElementById('shop'), ck=document.getElementById('checkin');
+  if(sh&&sh.style.display==='flex') return false;
+  if(ck&&ck.style.display==='flex') return false;
+  return true;
+}
+// 飘字：在房间某处升起「+N 图标」的暖色小字
+function floatText(x,y,txt,ico){
+  const el=document.createElement('div'); el.className='floatTxt';
+  el.innerHTML=txt+(ico?svgIcon(ico,13):'');
+  el.style.left=x+'px'; el.style.top=y+'px';
+  room.appendChild(el); setTimeout(()=>el.remove(),1150);
+}
+// 掉落物类型：金币最常见，爱心其次，钻石稀有
+const DROP_TYPES=[
+  {t:'coin', ico:'coin', w:60},
+  {t:'heart',ico:'heart',w:32},
+  {t:'gem',  ico:'gem',  w:8},
+];
+function pickDrop(){ const tot=DROP_TYPES.reduce((s,d)=>s+d.w,0); let r=Math.random()*tot;
+  for(const d of DROP_TYPES){ if((r-=d.w)<0) return d; } return DROP_TYPES[0]; }
+let curDrop=null;
+const DROP_HI={coin:['嘿嘿，捡到金币啦~','给你攒零花钱~'],heart:['最喜欢你了~','抱抱！','心动一下下~'],gem:['哇，闪闪的钻石送你！','大惊喜~']};
+function spawnDrop(){
+  if(curDrop||!homeActive()) return;
+  const d=pickDrop();
+  const px=parseInt(petEl.style.left||0)+petEl.offsetWidth/2;
+  const py=parseInt(petEl.style.top||0);
+  let x=px+(Math.random()*140-70), y=py-10-Math.random()*50;
+  x=Math.max(36,Math.min(room.clientWidth-36,x));
+  y=Math.max(room.clientHeight*0.30,Math.min(room.clientHeight*0.72,y));
+  const el=document.createElement('div'); el.className='drop';
+  el.innerHTML=svgIcon(d.ico, d.t==='gem'?26:24);
+  el.style.left=x+'px'; el.style.top=y+'px';
+  room.appendChild(el); curDrop=el;
+  const clear=()=>{ if(curDrop===el) curDrop=null; };
+  const expire=setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>{el.remove();clear();},400); }, 9000);
+  el.addEventListener('click',ev=>{ ev.stopPropagation(); clearTimeout(expire);
+    let txt='';
+    if(d.t==='coin'){ const g=3+Math.floor(Math.random()*4); S.coins+=g; txt='+'+g; }
+    else if(d.t==='heart'){ S.needs.mood=Math.min(100,S.needs.mood+6); addIntimacy(3); txt='+3'; }
+    else { S.gems=(S.gems||0)+1; txt='+1'; }
+    save(); renderNeeds();
+    floatText(x,y-6,txt,d.ico);
+    const hi=DROP_HI[d.t]; bubble(hi[Math.floor(Math.random()*hi.length)]); petHop();
+    el.remove(); clear();
+  });
+}
+// 偶尔的自言自语小气泡（不给奖励，纯陪伴感）
+const IDLE_TXT=['在想你呢~','今天也要开开心心的！','要不要一起玩？','嗯…有点想撒娇','窝在家里最舒服啦','咕噜咕噜~肚子叫了','摸摸我嘛~'];
+function idleBubble(){ if(homeActive() && (!sayEl.style.opacity || sayEl.style.opacity==='0')){
+  bubble(IDLE_TXT[Math.floor(Math.random()*IDLE_TXT.length)]); } }
+// 随机调度：每次触发后用新的随机间隔再排一次
+function scheduleDrop(){ setTimeout(()=>{ spawnDrop(); scheduleDrop(); }, 20000+Math.random()*28000); }
+function scheduleIdle(){ setTimeout(()=>{ idleBubble(); scheduleIdle(); }, 45000+Math.random()*45000); }
+
 /* ---------- 启动 ---------- */
 paintIcons();
 cur();          // 确保当前房间已初始化
@@ -927,3 +987,5 @@ setInterval(applyAmbient, 5*60*1000);   // 每5分钟跟随时间更新
 setTimeout(()=>bubble(greetByPhase()),700);
 // 每天首次打开自动弹出签到
 if(canCheckin()) setTimeout(openCheckin,1100);
+scheduleDrop();       // 随机掉落可点收集物（金币/爱心/钻石）
+scheduleIdle();       // 小昼偶尔自言自语的小气泡
