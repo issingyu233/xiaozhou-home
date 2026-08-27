@@ -75,6 +75,15 @@ const ACC=[
     g:['..N..','.BBB.','BBBBB','BBBBB']},
   {key:'star',  name:'星星夹', top:8,  size:28, p:{Y:'#f5c95a'},
     g:['..Y..','YYYYY','.YYY.','YY.YY']},
+  // —— 限定饰品（钻石购买，购买后写入 S.ownedAcc）——
+  {key:'catear',name:'猫耳',   top:2,  size:38, gem:3, p:{B:'#c98a5a',P:'#f2b4c4'},
+    g:['B.....B','BP...PB','BPP.PPB','.B...B.']},
+  {key:'halo',  name:'天使环', top:1,  size:34, gem:4, p:{Y:'#f4cf5c',W:'#fdeec0'},
+    g:['.YWWY.','YW..WY','YW..WY','.YWWY.']},
+  {key:'bunny', name:'兔耳',   top:1,  size:34, gem:3, p:{W:'#fdf3ec',P:'#f4b8c6'},
+    g:['W...W','WP.PW','WP.PW','WW.WW','.W.W.']},
+  {key:'heartclip',name:'爱心夹',top:7,size:28, gem:2, p:{R:'#ee7a8c',D:'#d95a72'},
+    g:['R.R','RRR','DRD','.D.']},
 ];
 const ACCMAP=Object.fromEntries(ACC.map(a=>[a.key,a]));
 function accSvg(key,px){
@@ -205,6 +214,9 @@ if(!S.checkin) S.checkin={last:'', streak:0};  // 每日签到：last=上次领�
 if(!S.stats) S.stats={care:0, pet:0, food:0, clean:0, energy:0, chat:0, maxStreak:0, outfits:[]};  // 累计统计（成就用）
 if(!S.stats.outfits) S.stats.outfits=[];
 if(!S.achv) S.achv=[];   // 已解锁成就 id 列表
+if(!S.ownedAcc) S.ownedAcc=[];   // 已购买的限定饰品 key（钻石购买）
+// 限定饰品是否已解锁：无 gem 价格的为免费常驻；有 gem 价格的需购买
+function accOwned(key){ const a=ACCMAP[key]; if(!a) return false; if(!a.gem) return true; return S.ownedAcc.includes(key); }
 
 /* ---------- 成长阶段 ---------- */
 // 小昼随亲密度 + 累计陪伴天数成长；同一张贴图，靠缩放表现从幼到长大
@@ -452,10 +464,25 @@ const closetPage=document.getElementById('closet');
 function openCloset(){ if(edit) setEdit(false); closeMood(); closeMe(); closeChat(); setNav('closet'); closetPage.style.display='flex'; renderCloset(); }
 function closeCloset(){ if(closetPage) closetPage.style.display='none'; }
 function renderCloset(){
+  const tip=document.querySelector('#closet .ctip');
+  if(tip) tip.innerHTML='给小昼戴上喜欢的小饰品~　<span class="cgem">'+svgIcon('gem',12)+' '+(S.gems||0)+'</span>';
   const box=document.getElementById('closetItems'); box.innerHTML='';
-  ACC.forEach(a=>{ const it=document.createElement('div'); it.className='citem'+(a.key===S.outfit?' on':'');
-    it.innerHTML='<div class="cpic">'+(a.g?accSvg(a.key,Math.min(a.size,34)):'<span class="cnone">∅</span>')+'</div><div class="cnm">'+a.name+'</div>';
-    it.onclick=()=>{ S.outfit=a.key;
+  ACC.forEach(a=>{
+    const locked=!accOwned(a.key);
+    const it=document.createElement('div'); it.className='citem'+(a.key===S.outfit?' on':'')+(locked?' locked':'')+(a.gem?' luxe':'');
+    let badge='';
+    if(locked) badge='<div class="cprice"><span class="ci">'+svgIcon('gem',11)+'</span>'+a.gem+'</div>';
+    else if(a.gem) badge='<div class="cprice got">限定</div>';
+    it.innerHTML='<div class="cpic">'+(a.g?accSvg(a.key,Math.min(a.size,34)):'<span class="cnone">∅</span>')+'</div><div class="cnm">'+a.name+'</div>'+badge;
+    it.onclick=()=>{
+      if(locked){ // 购买限定饰品
+        if((S.gems||0) < a.gem){ bubble('钻石不够啦~ 攒够'+a.gem+'颗再来~'); return; }
+        S.gems-=a.gem; S.ownedAcc.push(a.key); S.outfit=a.key;
+        if(!S.stats.outfits.includes(a.key)) S.stats.outfits.push(a.key);
+        save(); renderNeeds(); renderOutfit(); renderCloset();
+        bubble('解锁并戴上「'+a.name+'」啦，好闪亮~'); checkAchv(); return;
+      }
+      S.outfit=a.key;
       if(a.g && !S.stats.outfits.includes(a.key)) S.stats.outfits.push(a.key);
       save(); renderOutfit(); renderCloset();
       bubble(a.g?('戴上「'+a.name+'」啦~'):'摘下来啦~'); checkAchv(); };
@@ -898,6 +925,7 @@ const ACHV=[
   {id:'dressup', spr:'👗', name:'今日穿搭',   desc:'给小昼换一次装扮',     prog:()=>[S.stats.outfits.length,1]},
   {id:'chat10',  spr:'💬', name:'有话同你说', desc:'和小昼聊天 10 句',     prog:()=>[S.stats.chat,10]},
   {id:'diary5',  spr:'📖', name:'日记作家',   desc:'写下 5 篇日记',        prog:()=>[diaryCount(),5]},
+  {id:'luxe1',   spr:'💎', name:'闪耀登场',   desc:'用钻石解锁一件限定饰品',prog:()=>[(S.ownedAcc||[]).length,1]},
 ];
 const ACHV_COIN=40;
 // 检查并解锁新达成的成就；返回新解锁列表
