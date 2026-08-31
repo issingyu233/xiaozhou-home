@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>夏以昼喂养模拟器</title>
-<link rel="stylesheet" href="style.css?v=26">
+<link rel="stylesheet" href="style.css?v=27">
 </head>
 <body>
 <div id="app">
@@ -139,9 +139,14 @@
   <div id="closet" class="fullpage">
     <div class="fphead">
       <span class="fptitle">👗 衣柜</span>
+      <span class="fpgem" id="closetGem"></span>
       <button id="closetClose" class="fpclose">✕</button>
     </div>
-    <div class="ctip">给小昼戴上喜欢的小饰品~</div>
+    <div id="closetPreview">
+      <div class="cpStage" id="cpStage"></div>
+      <div class="cpName" id="cpName">还没戴饰品哦~</div>
+    </div>
+    <div id="closetCats"></div>
     <div id="closetItems"></div>
   </div>
 
@@ -197,6 +202,6 @@
     <div class="n" data-nav="me"><span class="ico" data-ico="person"></span>我的</div>
   </div>
 </div>
-<script src="game.js?v=26"></script>
+<script src="game.js?v=27"></script>
 </body>
 </html>

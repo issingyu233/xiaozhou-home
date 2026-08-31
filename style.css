@@ -187,24 +187,45 @@ svg{display:block;shape-rendering:crispEdges;}
 .fpclose{width:32px;height:32px;border:none;background:rgba(140,95,60,.1);border-radius:50%;color:#8a5f3c;font-size:15px;cursor:pointer;transition:background .15s;}
 .fpclose:active{background:rgba(140,95,60,.22);}
 
-/* 衣柜（整页）*/
+/* ===== 衣柜（换装 App 风：大预览 + 分类 + 格子）===== */
+#closet{background:linear-gradient(180deg,#fbf4e8,#f3ead8);}
 .ctip{font-size:12px;color:#a5895f;padding:12px 14px 2px;}
-#closetItems{padding:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;overflow-y:auto;align-content:start;}
-.citem{background:#fff7ea;border:2px solid #cbb083;border-radius:12px;padding:14px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;}
-.citem:active{transform:translateY(1px);}
-.citem.on{border-color:#e0885a;box-shadow:0 0 0 2px #f5cfa2 inset;}
+.fpgem{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:#9a6ec8;background:rgba(154,110,200,.13);padding:6px 13px;border-radius:999px;}
+.fpgem svg{vertical-align:middle;}
+
+/* 预览台：清新薄荷绿背景，小昼实时穿戴当前饰品 */
+#closetPreview{margin:14px 14px 2px;padding:18px 12px 14px;border-radius:24px;
+  background:linear-gradient(165deg,#ebf8e7 0%,#daf0de 60%,#d0ebd8 100%);
+  border:1px solid rgba(255,255,255,.6);box-shadow:0 8px 24px rgba(90,140,80,.16),inset 0 1px 0 rgba(255,255,255,.6);
+  display:flex;flex-direction:column;align-items:center;position:relative;overflow:hidden;}
+#closetPreview::before{content:'';position:absolute;top:-30px;right:-24px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.22);}
+.cpStage{position:relative;width:132px;margin:2px auto 0;display:flex;justify-content:center;z-index:1;}
+.cpStage::after{content:'';position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);width:96px;height:16px;border-radius:50%;background:rgba(80,120,70,.18);filter:blur(2px);z-index:0;}
+.cpStage .cppet{display:block;width:132px;image-rendering:pixelated;position:relative;z-index:2;filter:drop-shadow(0 4px 5px rgba(70,110,60,.22));}
+.cpStage .cpacc{position:absolute;left:50%;transform:translateX(-50%);z-index:3;pointer-events:none;}
+.cpStage .cpacc svg{display:block;image-rendering:pixelated;}
+.cpName{margin-top:12px;font-size:13px;font-weight:600;color:#5c9a52;z-index:1;}
+
+/* 分类标签 */
+#closetCats{display:flex;gap:8px;padding:13px 14px 6px;overflow-x:auto;}
+.ccat{flex:0 0 auto;font-size:12.5px;font-weight:600;color:#6a9a5a;background:rgba(120,180,105,.15);padding:7px 16px;border-radius:999px;cursor:pointer;transition:background .15s,color .15s;}
+.ccat.on{background:#7cc267;color:#fff;box-shadow:0 3px 9px rgba(110,180,90,.36);}
+
+/* 饰品格子 */
+#closetItems{flex:1;min-height:0;padding:6px 14px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;overflow-y:auto;align-content:start;}
+.citem{position:relative;background:rgba(255,252,246,.9);border:1px solid rgba(180,150,110,.28);border-radius:16px;padding:14px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:transform .1s;}
+.citem:active{transform:scale(.96);}
+.citem.on{border-color:#7cc267;box-shadow:0 0 0 2px rgba(124,194,103,.4) inset;background:#f2fbef;}
 .citem .cpic{height:46px;display:flex;align-items:center;justify-content:center;}
 .citem .cpic .cnone{color:#c0a988;font-size:22px;}
-.citem .cnm{font-size:12px;color:#6a4a30;}
+.citem .cnm{font-size:12px;font-weight:600;color:#6a4a30;}
 /* 限定饰品：钻石价 / 已解锁标 */
-.citem{position:relative;}
-.citem.luxe{background:#fbf1ff;border-color:#d9b8e6;}
-.citem.luxe.on{border-color:#c07ad6;box-shadow:0 0 0 2px #ecd2f5 inset;}
+.citem.luxe{background:#fbf2ff;border-color:rgba(200,150,220,.5);}
+.citem.luxe.on{border-color:#c07ad6;box-shadow:0 0 0 2px rgba(192,122,214,.4) inset;background:#f7edfc;}
 .citem.locked .cpic{opacity:.62;filter:grayscale(.15);}
-.citem .cprice{display:flex;align-items:center;gap:2px;font-size:11px;color:#9a5fb8;background:#f3e4fb;border-radius:8px;padding:1px 7px;margin-top:-2px;}
+.citem .cprice{display:flex;align-items:center;gap:2px;font-size:11px;font-weight:600;color:#9a5fb8;background:#f3e4fb;border-radius:999px;padding:2px 9px;margin-top:-2px;}
 .citem .cprice .ci{display:inline-flex;}
 .citem .cprice.got{color:#b07a3a;background:#fbeed3;}
-.ctip .cgem{float:right;display:inline-flex;align-items:center;gap:3px;color:#9a5fb8;font-weight:600;}
 .ctip .cgem svg{vertical-align:middle;}
 
 /* 我的页 */
