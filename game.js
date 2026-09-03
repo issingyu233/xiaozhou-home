@@ -65,26 +65,28 @@ function moodFace(level,px){
 // top=饰品在头部的纵向位置(占贴图高度%)，size=显示宽(px)
 const ACC=[
   {key:'none',  name:'不戴',   art:null},
-  {key:'bow',   name:'蝴蝶结', top:9,  size:34, p:{P:'#f3a3b5',D:'#d97a90'},
+  {key:'bow',   name:'蝴蝶结', cat:'hair', top:9,  size:34, p:{P:'#f3a3b5',D:'#d97a90'},
     g:['P.....P','PP...PP','PPPDPPP','PP...PP','P.....P']},
-  {key:'flower',name:'小红花', top:7,  size:30, p:{R:'#e8687a',Y:'#f5c95a',G:'#7aa84a'},
+  {key:'flower',name:'小红花', cat:'hair', top:7,  size:30, p:{R:'#e8687a',Y:'#f5c95a',G:'#7aa84a'},
     g:['.R.R.','RRRRR','.RYR.','RRRRR','.R.R.']},
-  {key:'crown', name:'小皇冠', top:5,  size:36, p:{Y:'#f2c94a',R:'#e0557a'},
+  {key:'crown', name:'小皇冠', cat:'hat',  top:5,  size:36, p:{Y:'#f2c94a',R:'#e0557a'},
     g:['Y.Y.Y','YYYYY','YRYRY','YYYYY']},
-  {key:'beret', name:'贝雷帽', top:4,  size:38, p:{B:'#c97a86',N:'#8a5a3a'},
+  {key:'beret', name:'贝雷帽', cat:'hat',  top:4,  size:38, p:{B:'#c97a86',N:'#8a5a3a'},
     g:['..N..','.BBB.','BBBBB','BBBBB']},
-  {key:'star',  name:'星星夹', top:8,  size:28, p:{Y:'#f5c95a'},
+  {key:'star',  name:'星星夹', cat:'hair', top:8,  size:28, p:{Y:'#f5c95a'},
     g:['..Y..','YYYYY','.YYY.','YY.YY']},
   // —— 限定饰品（钻石购买，购买后写入 S.ownedAcc）——
-  {key:'catear',name:'猫耳',   top:2,  size:38, gem:3, p:{B:'#c98a5a',P:'#f2b4c4'},
+  {key:'catear',name:'猫耳',   cat:'head', top:2,  size:38, gem:3, p:{B:'#c98a5a',P:'#f2b4c4'},
     g:['B.....B','BP...PB','BPP.PPB','.B...B.']},
-  {key:'halo',  name:'天使环', top:1,  size:34, gem:4, p:{Y:'#f4cf5c',W:'#fdeec0'},
+  {key:'halo',  name:'天使环', cat:'head', top:1,  size:34, gem:4, p:{Y:'#f4cf5c',W:'#fdeec0'},
     g:['.YWWY.','YW..WY','YW..WY','.YWWY.']},
-  {key:'bunny', name:'兔耳',   top:1,  size:34, gem:3, p:{W:'#fdf3ec',P:'#f4b8c6'},
+  {key:'bunny', name:'兔耳',   cat:'head', top:1,  size:34, gem:3, p:{W:'#fdf3ec',P:'#f4b8c6'},
     g:['W...W','WP.PW','WP.PW','WW.WW','.W.W.']},
-  {key:'heartclip',name:'爱心夹',top:7,size:28, gem:2, p:{R:'#ee7a8c',D:'#d95a72'},
+  {key:'heartclip',name:'爱心夹',cat:'hair',top:7,size:28, gem:2, p:{R:'#ee7a8c',D:'#d95a72'},
     g:['R.R','RRR','DRD','.D.']},
 ];
+const CLOSET_CATS=[{key:'all',name:'全部'},{key:'hair',name:'发饰'},{key:'hat',name:'帽子'},{key:'head',name:'头饰'}];
+let closetCat='all';
 const ACCMAP=Object.fromEntries(ACC.map(a=>[a.key,a]));
 function accSvg(key,px){
   const a=ACCMAP[key]; if(!a||!a.g) return '';
@@ -103,7 +105,19 @@ const FLOORS=[
   {id:'blue', img:'floor_blue.png',  name:'蓝瓷砖'},
   {id:'green',img:'floor_green.png', name:'绿瓷砖'},
 ];
-const CATS=[{key:'furn',name:'家具'},{key:'deco',name:'装饰'},{key:'floor',name:'地板'}];
+// 墙纸皮肤（每间房可各自切换；前4款是各房间原有默认墙）
+const WALLS=[
+  {id:'warm', img:'cc_wall2.png',   name:'暖木'},
+  {id:'blue', img:'cc_wall.png',    name:'蓝条'},
+  {id:'bath', img:'cc_bathwall.png',name:'雾格'},
+  {id:'kit',  img:'cc_kitwall.png', name:'厨帘'},
+  {id:'sage', img:'wall_sage.png',  name:'雾绿'},
+  {id:'blush',img:'wall_blush.png', name:'蜜桃'},
+  {id:'lilac',img:'wall_lilac.png', name:'藕荷'},
+  {id:'honey',img:'wall_honey.png', name:'蜂蜜'},
+];
+const ROOM_WALL_DEF={bedroom:1, living:0, bathroom:2, kitchen:3};
+const CATS=[{key:'furn',name:'家具'},{key:'deco',name:'装饰'},{key:'floor',name:'地板'},{key:'wall',name:'墙纸'}];
 // 家具目录：cat=分类, flat=地毯(压底), price=0 为开局自带, >0 需在商店购买
 const CATALOG=[
   // —— 开局自带 ——
@@ -259,8 +273,9 @@ function applyFloor(){
   floorEl.style.backgroundSize='40px 40px';
 }
 function applyRoom(){
-  const rm=ROOMMAP[S.room];
-  wallEl.style.background=`url('${rm.wall}${AV}') repeat`; wallEl.style.backgroundSize='27px auto';
+  const rm=ROOMMAP[S.room]; const r=cur();
+  if(typeof r.wall!=='number'){ r.wall=(ROOM_WALL_DEF[S.room]||0); save(); }  // 老存档/新房间补默认墙纸
+  wallEl.style.background=`url('${WALLS[r.wall].img}${AV}') repeat`; wallEl.style.backgroundSize='27px auto';
   applyFloor();
   const tag=document.getElementById('roomName'); if(tag) tag.textContent=rm.icon+' '+rm.name;
 }
@@ -463,11 +478,33 @@ document.querySelectorAll('#nav .n').forEach(n=>{ n.onclick=()=>{
 const closetPage=document.getElementById('closet');
 function openCloset(){ if(edit) setEdit(false); closeMood(); closeMe(); closeChat(); setNav('closet'); closetPage.style.display='flex'; renderCloset(); }
 function closeCloset(){ if(closetPage) closetPage.style.display='none'; }
+// 衣柜顶部：大预览小昼（穿戴当前饰品）
+function renderClosetPreview(){
+  const stage=document.getElementById('cpStage'); if(!stage) return;
+  const a=ACCMAP[S.outfit]||ACCMAP.none;
+  const PW=132, scale=PW/96;   // 预览里小昼放大到 132px
+  let acc='';
+  if(a.g){ acc='<span class="cpacc" style="top:'+a.top+'%">'+accSvg(a.key, Math.round(a.size*scale))+'</span>'; }
+  stage.innerHTML='<img class="cppet" src="xiaozhou.png" alt="小昼">'+acc;
+  const nm=document.getElementById('cpName');
+  if(nm) nm.textContent = a.g? ('正在戴：'+a.name) : '还没戴饰品哦~';
+}
+function renderClosetCats(){
+  const bar=document.getElementById('closetCats'); if(!bar) return;
+  bar.innerHTML='';
+  CLOSET_CATS.forEach(c=>{
+    const t=document.createElement('span'); t.className='ccat'+(c.key===closetCat?' on':''); t.textContent=c.name;
+    t.onclick=()=>{ closetCat=c.key; renderCloset(); };
+    bar.appendChild(t);
+  });
+}
 function renderCloset(){
-  const tip=document.querySelector('#closet .ctip');
-  if(tip) tip.innerHTML='给小昼戴上喜欢的小饰品~　<span class="cgem">'+svgIcon('gem',12)+' '+(S.gems||0)+'</span>';
+  const g=document.getElementById('closetGem'); if(g) g.innerHTML=svgIcon('gem',13)+' '+(S.gems||0);
+  renderClosetPreview();
+  renderClosetCats();
   const box=document.getElementById('closetItems'); box.innerHTML='';
-  ACC.forEach(a=>{
+  const list=ACC.filter(a=> a.key==='none' || closetCat==='all' || a.cat===closetCat );
+  list.forEach(a=>{
     const locked=!accOwned(a.key);
     const it=document.createElement('div'); it.className='citem'+(a.key===S.outfit?' on':'')+(locked?' locked':'')+(a.gem?' luxe':'');
     let badge='';
@@ -719,6 +756,12 @@ function renderTray(){
       const sw=document.createElement('div'); sw.className='sw'; sw.style.background=`url('${fl.img}${AV}') repeat`; sw.style.backgroundSize='20px 20px';
       it.appendChild(sw); it.title=fl.name;
       it.onclick=()=>{ cur().floor=i; applyFloor(); save(); renderTray(); bubble('换地板咯~'); };
+      box.appendChild(it); });
+  } else if(curCat==='wall'){
+    WALLS.forEach((wl,i)=>{ const it=document.createElement('div'); it.className='item floor'+(i===cur().wall?' on':'');
+      const sw=document.createElement('div'); sw.className='sw'; sw.style.background=`url('${wl.img}${AV}') repeat`; sw.style.backgroundSize='auto 20px';
+      it.appendChild(sw); it.title=wl.name;
+      it.onclick=()=>{ cur().wall=i; applyRoom(); save(); renderTray(); bubble('换墙纸啦，焕然一新~'); };
       box.appendChild(it); });
   } else {
     const list=CATALOG.filter(c=>c.cat===curCat && S.owned.includes(c.id));
