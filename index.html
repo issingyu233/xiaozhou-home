@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>夏以昼喂养模拟器</title>
-<link rel="stylesheet" href="style.css?v=32">
+<link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
 <div id="app">
@@ -142,9 +142,20 @@
       <span class="fpgem" id="closetGem"></span>
       <button id="closetClose" class="fpclose">✕</button>
     </div>
-    <div id="closetPreview">
-      <div class="cpStage" id="cpStage"></div>
-      <div class="cpName" id="cpName">还没戴饰品哦~</div>
+    <div id="dressArea">
+      <div id="dressWall"></div>
+      <div id="dressFloor"></div>
+      <div id="dressPetBox">
+        <img id="dressPet" src="xiaozhou.png" alt="小昼">
+        <div id="dressAcc"></div>
+      </div>
+      <div id="dressHint">点下面的饰品给小昼戴上 · 拖动摆位置，选中可缩放/镜像/收回</div>
+      <div id="dressBar">
+        <button class="db" data-dress="big">放大</button>
+        <button class="db" data-dress="small">缩小</button>
+        <button class="db" data-dress="flip">镜像</button>
+        <button class="db del" data-dress="del">收回</button>
+      </div>
     </div>
     <div id="closetCats"></div>
     <div id="closetItems"></div>
@@ -233,6 +244,6 @@
     <div class="n" data-nav="me"><span class="ico" data-ico="person"></span>我的</div>
   </div>
 </div>
-<script src="game.js?v=32"></script>
+<script src="game.js?v=33"></script>
 </body>
 </html>

@@ -95,6 +95,15 @@ function accSvg(key,px){
     r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`;}
   return `<svg viewBox="0 0 ${w} ${h}" width="${px||a.size}" height="${Math.round((px||a.size)*h/w)}" style="display:block;filter:drop-shadow(0 1px 0 rgba(80,55,30,.18))">${r}</svg>`;
 }
+// 可自由缩放版：svg 填满外层容器（宽100%，高按比例）
+function accSvgFill(key){
+  const a=ACCMAP[key]; if(!a||!a.g) return '';
+  const h=a.g.length,w=a.g[0].length; let r='';
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const ch=a.g[y][x];const c=a.p[ch];if(!c||ch==='.')continue;
+    r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`;}
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto;image-rendering:pixelated;filter:drop-shadow(0 1px 0 rgba(80,55,30,.2))">${r}</svg>`;
+}
+function accRatio(key){ const a=ACCMAP[key]; if(!a||!a.g) return 1; return a.g.length/a.g[0].length; } // 高/宽
 
 /* ---------- 数据 ---------- */
 const CELL=20;
@@ -218,7 +227,15 @@ if(!S.rooms){ S.rooms={ bedroom:{floor:S.floor||0, placed:S.placed||[], pet:S.pe
 if(!S.room) S.room='bedroom';
 if(!S.petRoom) S.petRoom=S.room||'bedroom';   // 小昼此刻待在哪个房间（不跟随镜头切换）
 if(!S.moods) S.moods={};   // { 'YYYY-MM-DD': {v:0-4, m:是否手动} }
-if(!S.outfit) S.outfit='none';   // 头顶饰品
+if(!S.outfit) S.outfit='none';   // 头顶饰品（旧字段，保留兼容）
+// 自由换装：S.worn = [{key,x,y,w,flip}]  x,y=相对小昼框中心的比例, w=宽度占小昼框比例, flip=镜像
+if(!S.worn){
+  S.worn=[];
+  const a=ACCMAP[S.outfit];
+  if(S.outfit && S.outfit!=='none' && a && a.g){
+    S.worn.push({key:S.outfit, x:0.5, y:(a.top||6)/100+0.02, w:(a.size||34)/96, flip:0});
+  }
+}
 if(!S.ai) S.ai={key:'',model:'deepseek-chat',enabled:false,auto:true};  // 小昼AI设置（key只存本地）
 if(!S.chat) S.chat=[];           // 与小昼的聊天记录 [{r:'me'|'xz',t:''}]
 if(!S.zdiary) S.zdiary={};        // 小昼自己写的日记 { 'YYYY-MM-DD': '...' }
@@ -480,16 +497,46 @@ document.querySelectorAll('#nav .n').forEach(n=>{ n.onclick=()=>{
 const closetPage=document.getElementById('closet');
 function openCloset(){ if(edit) setEdit(false); closeMood(); closeMe(); closeChat(); setNav('closet'); closetPage.style.display='flex'; renderCloset(); }
 function closeCloset(){ if(closetPage) closetPage.style.display='none'; }
-// 衣柜顶部：大预览小昼（穿戴当前饰品）
-function renderClosetPreview(){
-  const stage=document.getElementById('cpStage'); if(!stage) return;
-  const a=ACCMAP[S.outfit]||ACCMAP.none;
-  const PW=132, scale=PW/96;   // 预览里小昼放大到 132px
-  let acc='';
-  if(a.g){ acc='<span class="cpacc" style="top:'+a.top+'%">'+accSvg(a.key, Math.round(a.size*scale))+'</span>'; }
-  stage.innerHTML='<img class="cppet" src="xiaozhou.png" alt="小昼">'+acc;
-  const nm=document.getElementById('cpName');
-  if(nm) nm.textContent = a.g? ('正在戴：'+a.name) : '还没戴饰品哦~';
+let selWorn=-1;   // 当前选中的饰品下标（-1=无）
+// 换装画布背景 = 卧室的墙纸+地板
+function dressBedroomBg(){
+  const bm=(S.rooms&&S.rooms.bedroom)||{};
+  const wi=(typeof bm.wall==='number')?bm.wall:0, wl=(WALLS[wi]||WALLS[0]);
+  const fi=(typeof bm.floor==='number')?bm.floor:0, fl=(FLOORS[fi]||FLOORS[0]);
+  const dw=document.getElementById('dressWall'), df=document.getElementById('dressFloor');
+  if(dw){ dw.style.background="url('"+wl.img+AV+"') repeat"; dw.style.backgroundSize='34px auto'; }
+  if(df){ df.style.background="url('"+fl.img+AV+"') repeat"; df.style.backgroundSize='34px auto'; }
+}
+function applyWornEl(el,it){
+  el.style.left=(it.x*100)+'%'; el.style.top=(it.y*100)+'%'; el.style.width=(it.w*100)+'%';
+  el.style.transform='translate(-50%,-50%)'+(it.flip?' scaleX(-1)':'');
+}
+function selectWorn(i){ selWorn=i;
+  document.querySelectorAll('#dressAcc .wornEdit').forEach((e,idx)=>e.classList.toggle('sel',idx===i));
+  const bar=document.getElementById('dressBar'); if(bar) bar.classList.toggle('show', i>=0);
+}
+function renderDress(){
+  dressBedroomBg();
+  const box=document.getElementById('dressAcc'); if(!box) return; box.innerHTML='';
+  (S.worn||[]).forEach((it,idx)=>{
+    const el=document.createElement('div'); el.className='wornEdit'; el.innerHTML=accSvgFill(it.key);
+    applyWornEl(el,it);
+    let dragging=false,sx=0,sy=0,ox=0,oy=0,r=null;
+    el.addEventListener('pointerdown',ev=>{ ev.stopPropagation(); selectWorn(idx); dragging=true;
+      try{el.setPointerCapture(ev.pointerId);}catch(e){} r=box.getBoundingClientRect(); sx=ev.clientX; sy=ev.clientY; ox=it.x; oy=it.y; });
+    el.addEventListener('pointermove',ev=>{ if(!dragging||!r) return;
+      it.x=Math.max(0,Math.min(1,ox+(ev.clientX-sx)/r.width));
+      it.y=Math.max(0,Math.min(1,oy+(ev.clientY-sy)/r.height)); applyWornEl(el,it); });
+    el.addEventListener('pointerup',()=>{ if(dragging){ dragging=false; save(); renderOutfit(); } });
+    box.appendChild(el);
+  });
+  selectWorn(selWorn>=0 && selWorn<(S.worn||[]).length ? selWorn : -1);
+}
+function addWorn(key){
+  const a=ACCMAP[key]; if(!a||!a.g) return;
+  S.worn.push({key, x:0.5, y:(a.top||6)/100+0.04, w:(a.size||34)/96, flip:0});
+  if(!S.stats.outfits.includes(key)) S.stats.outfits.push(key);
+  selWorn=S.worn.length-1; save(); renderOutfit(); renderDress(); checkAchv();
 }
 function renderClosetCats(){
   const bar=document.getElementById('closetCats'); if(!bar) return;
@@ -502,31 +549,41 @@ function renderClosetCats(){
 }
 function renderCloset(){
   const g=document.getElementById('closetGem'); if(g) g.innerHTML=svgIcon('gem',13)+' '+(S.gems||0);
-  renderClosetPreview();
   renderClosetCats();
+  renderDress();
   const box=document.getElementById('closetItems'); box.innerHTML='';
   const list=ACC.filter(a=> a.key==='none' || closetCat==='all' || a.cat===closetCat );
   list.forEach(a=>{
     const locked=!accOwned(a.key);
-    const it=document.createElement('div'); it.className='citem'+(a.key===S.outfit?' on':'')+(locked?' locked':'')+(a.gem?' luxe':'');
+    const wornNow = a.key!=='none' && S.worn.some(it=>it.key===a.key);
+    const it=document.createElement('div'); it.className='citem'+(wornNow?' on':'')+(locked?' locked':'')+(a.gem?' luxe':'');
     let badge='';
     if(locked) badge='<div class="cprice"><span class="ci">'+svgIcon('gem',11)+'</span>'+a.gem+'</div>';
     else if(a.gem) badge='<div class="cprice got">限定</div>';
     it.innerHTML='<div class="cpic">'+(a.g?accSvg(a.key,Math.min(a.size,34)):'<span class="cnone">∅</span>')+'</div><div class="cnm">'+a.name+'</div>'+badge;
     it.onclick=()=>{
-      if(locked){ // 购买限定饰品
-        if((S.gems||0) < a.gem){ bubble('钻石不够啦~ 攒够'+a.gem+'颗再来~'); return; }
-        S.gems-=a.gem; S.ownedAcc.push(a.key); S.outfit=a.key;
-        if(!S.stats.outfits.includes(a.key)) S.stats.outfits.push(a.key);
-        save(); renderNeeds(); renderOutfit(); renderCloset();
-        bubble('解锁并戴上「'+a.name+'」啦，好闪亮~'); checkAchv(); return;
-      }
-      S.outfit=a.key;
-      if(a.g && !S.stats.outfits.includes(a.key)) S.stats.outfits.push(a.key);
-      save(); renderOutfit(); renderCloset();
-      bubble(a.g?('戴上「'+a.name+'」啦~'):'摘下来啦~'); checkAchv(); };
+      if(a.key==='none'){ S.worn=[]; selWorn=-1; save(); renderOutfit(); renderCloset(); return; }
+      if(locked){ if((S.gems||0) < a.gem){ bubble('钻石不够啦~ 攒够'+a.gem+'颗再来~'); return; }
+        S.gems-=a.gem; S.ownedAcc.push(a.key); save(); renderNeeds(); }
+      addWorn(a.key); renderCloset();
+    };
     box.appendChild(it); });
 }
+// 换装画布：空白处点一下取消选中；工具条按钮
+(function(){
+  const area=document.getElementById('dressArea');
+  if(area) area.addEventListener('pointerdown',e=>{ if(e.target.closest('.wornEdit')||e.target.closest('#dressBar')) return; selectWorn(-1); });
+  const bar=document.getElementById('dressBar');
+  if(bar) bar.querySelectorAll('.db').forEach(btn=>{ btn.onclick=()=>{
+    if(selWorn<0||selWorn>=S.worn.length) return; const it=S.worn[selWorn]; const act=btn.dataset.dress;
+    if(act==='big') it.w=Math.min(1.6, it.w*1.15);
+    else if(act==='small') it.w=Math.max(0.05, it.w/1.15);
+    else if(act==='flip') it.flip=it.flip?0:1;
+    else if(act==='del'){ S.worn.splice(selWorn,1); selWorn=-1; save(); renderOutfit(); renderDress(); return; }
+    const el=document.querySelectorAll('#dressAcc .wornEdit')[selWorn]; if(el) applyWornEl(el,it);
+    save(); renderOutfit();
+  }; });
+})();
 document.getElementById('closetClose').onclick=()=>{ closeCloset(); setNav('home'); };
 
 /* ---------- 心情日历页 ---------- */
@@ -929,10 +986,13 @@ const petAcc=document.createElement('div'); petAcc.id='petAcc'; room.appendChild
 function syncAcc(){ petAcc.style.left=petEl.style.left; petAcc.style.top=petEl.style.top;
   petAcc.style.width=petEl.offsetWidth+'px'; petAcc.style.height=petEl.offsetHeight+'px'; }
 function renderOutfit(){
-  const a=ACCMAP[S.outfit]||ACCMAP.none;
-  if(!a.g){ petAcc.innerHTML=''; petAcc.style.display='none'; return; }
+  if(!S.worn || !S.worn.length){ petAcc.innerHTML=''; petAcc.style.display='none'; return; }
   petAcc.style.display='block';
-  petAcc.innerHTML='<span class="accItem" style="top:'+a.top+'%">'+accSvg(a.key)+'</span>';
+  petAcc.innerHTML = S.worn.map(it=>{
+    const a=ACCMAP[it.key]; if(!a||!a.g) return '';
+    const fl = it.flip ? ' scaleX(-1)' : '';
+    return '<span class="wornItem" style="left:'+(it.x*100)+'%;top:'+(it.y*100)+'%;width:'+(it.w*100)+'%;transform:translate(-50%,-50%)'+fl+'">'+accSvgFill(it.key)+'</span>';
+  }).join('');
   syncAcc();
 }
 function placePet(){
@@ -948,8 +1008,7 @@ function petHere(){ return S.room===S.petRoom; }
 function updatePetPresence(){
   const on=petHere();
   petEl.style.display=on?'':'none';
-  const a=ACCMAP[S.outfit];
-  petAcc.style.display=(on && a && a.g)?'block':'none';
+  petAcc.style.display=(on && S.worn && S.worn.length)?'block':'none';
   if(!on){ sayEl.style.opacity=0; }
 }
 /* 小昼自己溜达（只在你没看着他那间时换，避免当面消失）*/

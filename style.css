@@ -216,18 +216,31 @@ svg{display:block;shape-rendering:crispEdges;}
 .fpgem{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:#9a6ec8;background:rgba(154,110,200,.13);padding:6px 13px;border-radius:999px;}
 .fpgem svg{vertical-align:middle;}
 
-/* 预览台：清新薄荷绿背景，小昼实时穿戴当前饰品 */
-#closetPreview{margin:14px 14px 2px;padding:18px 12px 14px;border-radius:24px;
-  background:linear-gradient(165deg,#ebf8e7 0%,#daf0de 60%,#d0ebd8 100%);
-  border:1px solid rgba(255,255,255,.6);box-shadow:0 8px 24px rgba(90,140,80,.16),inset 0 1px 0 rgba(255,255,255,.6);
-  display:flex;flex-direction:column;align-items:center;position:relative;overflow:hidden;}
-#closetPreview::before{content:'';position:absolute;top:-30px;right:-24px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.22);}
-.cpStage{position:relative;width:132px;margin:2px auto 0;display:flex;justify-content:center;z-index:1;}
-.cpStage::after{content:'';position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);width:96px;height:16px;border-radius:50%;background:rgba(80,120,70,.18);filter:blur(2px);z-index:0;}
-.cpStage .cppet{display:block;width:132px;image-rendering:pixelated;position:relative;z-index:2;filter:drop-shadow(0 4px 5px rgba(70,110,60,.22));}
-.cpStage .cpacc{position:absolute;left:50%;transform:translateX(-50%);z-index:3;pointer-events:none;}
-.cpStage .cpacc svg{display:block;image-rendering:pixelated;}
-.cpName{margin-top:12px;font-size:13px;font-weight:600;color:#5c9a52;z-index:1;}
+/* 换装画布：真实卧室场景 + 大号小昼，自由摆饰品 */
+#dressArea{position:relative;margin:12px 12px 2px;height:300px;border-radius:22px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.6);box-shadow:0 8px 24px rgba(120,90,60,.18),inset 0 1px 0 rgba(255,255,255,.5);
+  background:#e7cba0;touch-action:none;}
+#dressWall{position:absolute;left:0;right:0;top:0;height:58%;background:url('cc_wall.png') repeat;background-size:34px auto;image-rendering:pixelated;}
+#dressWall::after{content:'';position:absolute;left:0;right:0;bottom:0;height:12px;background:linear-gradient(180deg,#b5854e 0 5px,#9a6c3c 5px 12px);}
+#dressFloor{position:absolute;left:0;right:0;top:58%;bottom:0;background:url('floor_wood.png') repeat;background-size:34px auto;image-rendering:pixelated;}
+#dressPetBox{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:170px;height:auto;z-index:2;}
+#dressPetBox::after{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);width:120px;height:16px;border-radius:50%;background:rgba(60,40,25,.22);filter:blur(3px);z-index:-1;}
+#dressPet{display:block;width:100%;image-rendering:pixelated;filter:drop-shadow(0 4px 4px rgba(70,50,30,.25));}
+#dressAcc{position:absolute;inset:0;}
+.wornEdit{position:absolute;cursor:grab;touch-action:none;}
+.wornEdit svg{display:block;width:100%;height:auto;image-rendering:pixelated;pointer-events:none;}
+.wornEdit.sel{outline:2px dashed #e0885a;outline-offset:3px;border-radius:4px;}
+#dressHint{position:absolute;left:0;right:0;top:8px;text-align:center;font-size:11px;color:#7a5a3a;
+  background:rgba(255,250,243,.72);padding:4px 0;z-index:5;pointer-events:none;}
+#dressBar{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);z-index:6;display:none;gap:6px;}
+#dressBar.show{display:flex;}
+#dressBar .db{font-size:12px;font-weight:600;color:#7a4f2e;background:rgba(255,250,243,.92);border:1px solid rgba(180,150,110,.4);
+  border-radius:999px;padding:6px 13px;cursor:pointer;box-shadow:0 3px 8px rgba(90,60,38,.18);}
+#dressBar .db:active{transform:scale(.94);}
+#dressBar .db.del{color:#c0503a;}
+/* 首页小昼身上的饰品叠层 */
+#petAcc .wornItem{position:absolute;}
+#petAcc .wornItem svg{display:block;width:100%;height:auto;image-rendering:pixelated;}
 
 /* 分类标签 */
 #closetCats{display:flex;gap:8px;padding:13px 14px 6px;overflow-x:auto;}
