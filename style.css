@@ -187,6 +187,29 @@ svg{display:block;shape-rendering:crispEdges;}
 .fpclose{width:32px;height:32px;border:none;background:rgba(140,95,60,.1);border-radius:50%;color:#8a5f3c;font-size:15px;cursor:pointer;transition:background .15s;}
 .fpclose:active{background:rgba(140,95,60,.22);}
 
+/* ===== 接爱心小游戏 ===== */
+#gamepage{background:linear-gradient(180deg,#eaf4ff 0%,#f3e9ff 60%,#ffeef4 100%);}
+#gwrap{flex:1;display:flex;flex-direction:column;min-height:0;}
+#ghud{display:flex;gap:8px;justify-content:center;padding:12px 10px 6px;}
+#ghud .ghtag{font-size:12px;font-weight:600;color:#7a6aa0;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.7);border-radius:999px;padding:5px 12px;}
+#ghud .ghtag b{color:#e0708a;font-size:14px;margin:0 1px;}
+#gstage{position:relative;flex:1;min-height:0;margin:6px 12px 16px;border-radius:20px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.2));
+  border:1px solid rgba(255,255,255,.7);box-shadow:0 6px 20px rgba(120,100,160,.16),inset 0 1px 0 rgba(255,255,255,.6);
+  touch-action:none;}
+#gcanvas{display:block;width:100%;height:100%;}
+#goverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(60,50,80,.28);backdrop-filter:blur(2px);}
+#goverlay.hide{display:none;}
+.gocard{width:80%;max-width:300px;background:rgba(255,252,248,.94);border:1px solid rgba(255,255,255,.7);border-radius:20px;
+  box-shadow:0 10px 34px rgba(80,60,110,.3);padding:22px 18px;text-align:center;}
+#goTitle{font-size:15px;font-weight:600;color:#8a5a86;margin-bottom:8px;}
+#goDesc{font-size:12px;color:#9a7a9a;line-height:1.7;margin-bottom:14px;}
+#goResult{font-size:13px;color:#e0708a;font-weight:600;line-height:1.7;margin-bottom:14px;min-height:0;}
+#goResult:empty{display:none;}
+.gbtn{font-size:15px;font-weight:600;color:#fff;background:linear-gradient(135deg,#f7a1b8,#e0708a);border:none;border-radius:999px;
+  padding:11px 34px;cursor:pointer;box-shadow:0 5px 14px rgba(224,112,138,.4);transition:transform .1s;}
+.gbtn:active{transform:scale(.95);}
+
 /* ===== 衣柜（换装 App 风：大预览 + 分类 + 格子）===== */
 #closet{background:linear-gradient(180deg,#fbf4e8,#f3ead8);}
 .ctip{font-size:12px;color:#a5895f;padding:12px 14px 2px;}
@@ -235,6 +258,11 @@ svg{display:block;shape-rendering:crispEdges;}
 #meStats .st{display:flex;flex-direction:column;gap:3px;}
 #meStats .st b{font-size:18px;color:#e0885a;}
 #meStats .st span{font-size:11px;color:#8a6a4a;}
+.careGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;}
+.cstat{background:#fffdf6;border:2px solid #ecdcb8;border-radius:11px;padding:8px 4px 7px;display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:1px 1px 0 rgba(58,40,29,.08);}
+.cstat .csIco{line-height:0;opacity:.9;}
+.cstat b{font-size:17px;color:#e0885a;line-height:1;margin-top:1px;}
+.cstat .csL{font-size:10px;color:#a5895f;}
 .mebtn{display:flex;align-items:center;justify-content:space-between;background:#fff7ea;border:2px solid #e0c79a;border-radius:12px;padding:13px 14px;font-size:14px;color:#7a4f2e;cursor:pointer;box-shadow:1px 2px 0 rgba(58,40,29,.14);}
 .mebtn:active{transform:translateY(1px);}
 .mebtn .mearw{color:#c0a074;font-size:18px;}

@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>夏以昼喂养模拟器</title>
-<link rel="stylesheet" href="style.css?v=30">
+<link rel="stylesheet" href="style.css?v=32">
 </head>
 <body>
 <div id="app">
@@ -159,7 +159,11 @@
     <div id="meBody">
       <div class="mecard" id="meStats"></div>
 
+      <div class="mecard" id="meCare"></div>
+
       <div class="mecard" id="meAchv"></div>
+
+      <button class="mebtn" id="openGame"><span>🎮 接爱心小游戏</span><span class="mearw">›</span></button>
 
       <button class="mebtn" id="openChat"><span>💬 和小昼聊天</span><span class="mearw">›</span></button>
 
@@ -177,6 +181,33 @@
           <button id="aiSave" class="mesmall primary">保存</button>
         </div>
         <div id="aiStatus" class="mestatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 接爱心小游戏 ===== -->
+  <div id="gamepage" class="fullpage">
+    <div class="fphead">
+      <span class="fptitle">🎮 接爱心</span>
+      <span class="fpgem" id="gameCoin"></span>
+      <button id="gameClose" class="fpclose">✕</button>
+    </div>
+    <div id="gwrap">
+      <div id="ghud">
+        <span class="ghtag">得分 <b id="gScore">0</b></span>
+        <span class="ghtag">时间 <b id="gTime">30</b></span>
+        <span class="ghtag">今日 <b id="gPlays">3</b> 局有奖</span>
+      </div>
+      <div id="gstage">
+        <canvas id="gcanvas"></canvas>
+        <div id="goverlay">
+          <div class="gocard">
+            <div id="goTitle">接住爱心和金币，躲开炸弹~</div>
+            <div id="goDesc">左右滑动移动小昼 · 每局 30 秒<br>得分按 1:1 换金币（每天前 3 局有奖）</div>
+            <div id="goResult"></div>
+            <button id="gStart" class="gbtn">开始游戏</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -202,6 +233,6 @@
     <div class="n" data-nav="me"><span class="ico" data-ico="person"></span>我的</div>
   </div>
 </div>
-<script src="game.js?v=30"></script>
+<script src="game.js?v=32"></script>
 </body>
 </html>

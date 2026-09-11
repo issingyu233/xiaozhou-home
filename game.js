@@ -229,6 +229,7 @@ if(!S.stats) S.stats={care:0, pet:0, food:0, clean:0, energy:0, chat:0, maxStrea
 if(!S.stats.outfits) S.stats.outfits=[];
 if(!S.achv) S.achv=[];   // 已解锁成就 id 列表
 if(!S.ownedAcc) S.ownedAcc=[];   // 已购买的限定饰品 key（钻石购买）
+if(!S.game) S.game={date:'', plays:0, best:0};   // 接爱心小游戏：date=当天, plays=今日已玩局数, best=最高分
 // 限定饰品是否已解锁：无 gem 价格的为免费常驻；有 gem 价格的需购买
 function accOwned(key){ const a=ACCMAP[key]; if(!a) return false; if(!a.gem) return true; return S.ownedAcc.includes(key); }
 
@@ -466,6 +467,7 @@ document.getElementById('arwR').onclick=()=>switchRoom(1);
 function setNav(key){ document.querySelectorAll('#nav .n').forEach(n=>n.classList.toggle('on',n.dataset.nav===key)); }
 document.querySelectorAll('#nav .n').forEach(n=>{ n.onclick=()=>{
   const k=n.dataset.nav;
+  if(typeof closeGame==='function') closeGame();
   if(k==='mood'){ openMood(); return; }
   closeMood();
   if(k==='closet'){ openCloset(); return; }
@@ -700,7 +702,30 @@ function renderMe(){
   document.getElementById('aiEnabled').checked=!!S.ai.enabled;
   document.getElementById('aiAuto').checked=!!S.ai.auto;
   document.getElementById('aiStatus').textContent=(S.ai.enabled&&S.ai.key)?'已启用 · 小昼会用 AI 回应你':'未启用 · 现在用本地暖心话兜底';
+  renderCare();
   renderAchv();
+}
+// 照料小结：把累计照料/各类互动/收藏等统计集中展示
+function roomsVisited(){ return Object.keys(S.rooms||{}).length; }
+function renderCare(){
+  const box=document.getElementById('meCare'); if(!box) return;
+  const st=S.stats||{};
+  const cells=[
+    {ico:'paw',   v:st.care||0,            l:'累计照料'},
+    {ico:'paw',   v:st.pet||0,             l:'摸摸'},
+    {ico:'apple', v:st.food||0,            l:'喂食'},
+    {ico:'drop',  v:st.clean||0,           l:'洗澡'},
+    {ico:'moon',  v:st.energy||0,          l:'哄睡'},
+    {ico:'book',  v:diaryCount(),          l:'日记(篇)'},
+    {ico:'cart',  v:furnOwnedCount(),      l:'家具(件)'},
+    {ico:'home',  v:roomsVisited(),        l:'去过的房间'},
+    {ico:'coin',  v:st.maxStreak||0,       l:'最长连签(天)'},
+  ];
+  let h='<div class="mesec">照料小结</div><div class="careGrid">';
+  cells.forEach(c=>{ h+='<div class="cstat"><span class="csIco">'+svgIcon(c.ico,15)+'</span>'
+    +'<b>'+c.v+'</b><span class="csL">'+c.l+'</span></div>'; });
+  h+='</div>';
+  box.innerHTML=h;
 }
 document.getElementById('meClose').onclick=()=>{ closeMe(); setNav('home'); };
 document.getElementById('aiSave').onclick=()=>{
@@ -741,6 +766,94 @@ function doSend(){ const inp=document.getElementById('chatIn'); const t=inp.valu
   xzhouChatSend(t).finally(()=>btn.classList.remove('busy')); }
 document.getElementById('chatSend').onclick=doSend;
 document.getElementById('chatIn').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); doSend(); } });
+
+/* ========== 接爱心小游戏 ========== */
+const gamePage=document.getElementById('gamepage');
+const GAME_CAP=3;         // 每天前几局有金币奖励
+const GAME_LEN=30;        // 每局秒数
+const gPet=new Image(); gPet.src='xiaozhou.png';
+let gRun=false, gRAF=0, gTimer=0, gItems=[], gScore=0, gLeft=GAME_LEN, gCatchX=0.5, gSpawnAcc=0;
+const GITEMS=[
+  {e:'❤️',s:1,w:42},{e:'🪙',s:2,w:26},{e:'💎',s:5,w:8},{e:'💣',s:-2,w:20},
+];
+function gToday(){ return dateKey(new Date()); }
+function gSyncDaily(){ const t=gToday(); if(S.game.date!==t){ S.game.date=t; S.game.plays=0; save(); } }
+function gPlaysLeft(){ gSyncDaily(); return Math.max(0, GAME_CAP-S.game.plays); }
+function updateGameHud(){
+  document.getElementById('gScore').textContent=gScore;
+  document.getElementById('gTime').textContent=gLeft;
+  document.getElementById('gPlays').textContent=gPlaysLeft();
+  const gc=document.getElementById('gameCoin'); if(gc) gc.innerHTML=svgIcon('coin',13)+' '+S.coins;
+}
+function openGame(){ closeMe(); gamePage.style.display='flex'; gScore=0; gLeft=GAME_LEN; gItems=[];
+  document.getElementById('goverlay').classList.remove('hide');
+  document.getElementById('goResult').innerHTML='';
+  document.getElementById('goTitle').textContent='接住爱心和金币，躲开炸弹~';
+  document.getElementById('gStart').textContent = gPlaysLeft()>0 ? '开始游戏' : '再玩一局（今日已无奖励）';
+  updateGameHud(); setTimeout(gFitCanvas,30); }
+function closeGame(){ gStop(); gamePage.style.display='none'; }
+function gFitCanvas(){ const cv=document.getElementById('gcanvas'), st=document.getElementById('gstage');
+  const w=st.clientWidth||360, h=st.clientHeight||420, dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=w*dpr; cv.height=h*dpr; cv._w=w; cv._h=h; const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); }
+function gStop(){ gRun=false; if(gRAF) cancelAnimationFrame(gRAF); if(gTimer) clearInterval(gTimer); gRAF=0; gTimer=0; }
+function gStart(){
+  gFitCanvas(); gScore=0; gLeft=GAME_LEN; gItems=[]; gSpawnAcc=0; gRun=true;
+  document.getElementById('goverlay').classList.add('hide');
+  updateGameHud();
+  gTimer=setInterval(()=>{ gLeft--; updateGameHud(); if(gLeft<=0) gEnd(); }, 1000);
+  let last=performance.now();
+  const loop=(now)=>{ if(!gRun) return; const dt=Math.min(50,now-last)/1000; last=now; gTick(dt); gDraw(); gRAF=requestAnimationFrame(loop); };
+  gRAF=requestAnimationFrame(loop);
+}
+function gPickType(){ let tot=GITEMS.reduce((a,b)=>a+b.w,0), r=Math.random()*tot; for(const it of GITEMS){ if((r-=it.w)<0) return it; } return GITEMS[0]; }
+function gTick(dt){
+  const cv=document.getElementById('gcanvas'), W=cv._w, H=cv._h;
+  gSpawnAcc+=dt;
+  const gap=0.62;   // 生成间隔（秒）
+  if(gSpawnAcc>=gap){ gSpawnAcc=0; const t=gPickType();
+    gItems.push({x:0.08+Math.random()*0.84, y:-0.06, vy:0.28+Math.random()*0.22, t}); }
+  const catchY=H-46, cx=gCatchX*W, cw=64;
+  for(const it of gItems){ it.y += it.vy*dt; }
+  for(let i=gItems.length-1;i>=0;i--){ const it=gItems[i]; const iy=it.y*H, ix=it.x*W;
+    if(iy>=catchY-18 && iy<=catchY+30 && Math.abs(ix-cx)<cw*0.55){
+      // 接到
+      if(it.t.s>=0){ gScore+=it.t.s; } else { gScore=Math.max(0,gScore+it.t.s); }
+      gItems.splice(i,1); updateGameHud(); continue; }
+    if(it.y>1.1) gItems.splice(i,1);
+  }
+}
+function gDraw(){
+  const cv=document.getElementById('gcanvas'), ctx=cv.getContext('2d'), W=cv._w, H=cv._h;
+  ctx.clearRect(0,0,W,H);
+  // 掉落物
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(const it of gItems){ ctx.font=(it.t.e==='💎'?26:24)+'px serif'; ctx.fillText(it.t.e, it.x*W, it.y*H); }
+  // 小昼（接手）
+  const cw=64, ch=gPet.naturalWidth?cw*gPet.naturalHeight/gPet.naturalWidth:72;
+  const cx=gCatchX*W - cw/2, cy=H-ch-6;
+  if(gPet.complete && gPet.naturalWidth) ctx.drawImage(gPet, cx, cy, cw, ch);
+}
+function gEnd(){
+  gStop(); document.getElementById('goverlay').classList.remove('hide');
+  const left=gPlaysLeft(); let reward=0;
+  if(left>0){ reward=gScore; S.coins+=reward; S.game.plays++; }
+  if(gScore>(S.game.best||0)) S.game.best=gScore;
+  save(); renderNeeds && renderNeeds(); updateGameHud();
+  document.getElementById('goTitle').textContent='时间到~';
+  document.getElementById('goResult').innerHTML = '本局得分 '+gScore+' · 最高 '+(S.game.best||0)+'<br>'
+    + (reward>0 ? ('获得 '+reward+' 金币 🪙') : '今日奖励次数用完啦，明天再来~');
+  document.getElementById('gStart').textContent = gPlaysLeft()>0 ? '再来一局' : '再玩一局（无奖励）';
+}
+// 触摸/鼠标控制小昼左右
+(function(){ const st=document.getElementById('gstage');
+  const move=(clientX)=>{ const r=st.getBoundingClientRect(); gCatchX=Math.max(0.05,Math.min(0.95,(clientX-r.left)/r.width)); };
+  st.addEventListener('pointermove',e=>{ if(gRun){ move(e.clientX); } });
+  st.addEventListener('pointerdown',e=>{ if(gRun){ move(e.clientX); } });
+})();
+document.getElementById('openGame').onclick=()=>openGame();
+document.getElementById('gameClose').onclick=()=>{ closeGame(); openMe(); };
+document.getElementById('gStart').onclick=()=>gStart();
+window.addEventListener('resize',()=>{ if(gamePage.style.display==='flex') gFitCanvas(); });
 
 /* 托盘：分类 + 内容 */
 let curCat='furn';
@@ -969,6 +1082,11 @@ const ACHV=[
   {id:'chat10',  spr:'💬', name:'有话同你说', desc:'和小昼聊天 10 句',     prog:()=>[S.stats.chat,10]},
   {id:'diary5',  spr:'📖', name:'日记作家',   desc:'写下 5 篇日记',        prog:()=>[diaryCount(),5]},
   {id:'luxe1',   spr:'💎', name:'闪耀登场',   desc:'用钻石解锁一件限定饰品',prog:()=>[(S.ownedAcc||[]).length,1]},
+  {id:'rooms4',  spr:'🏠', name:'安家落户',   desc:'走遍全部 4 间房间',    prog:()=>[roomsVisited(),4]},
+  {id:'care500', spr:'🤎', name:'形影不离',   desc:'累计照料 500 次',      prog:()=>[S.stats.care,500], gem:2},
+  {id:'furn40',  spr:'🏆', name:'家具大亨',   desc:'拥有 40 件家具',       prog:()=>[furnOwnedCount(),40], gem:1},
+  {id:'diary20', spr:'✍️', name:'小小作家',   desc:'写下 20 篇日记',       prog:()=>[diaryCount(),20], gem:1},
+  {id:'intim1k', spr:'💗', name:'心有灵犀',   desc:'亲密度达到 1000',      prog:()=>[S.intimacy||0,1000], gem:2},
 ];
 const ACHV_COIN=40;
 // 检查并解锁新达成的成就；返回新解锁列表
