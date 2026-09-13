@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>夏以昼喂养模拟器</title>
-<link rel="stylesheet" href="style.css?v=33">
+<link rel="stylesheet" href="style.css?v=36">
 </head>
 <body>
 <div id="app">
@@ -62,6 +62,8 @@
   <!-- 右侧：装修 / 商店 / 完成 -->
   <button class="tbtn panel" id="btnEdit"><span class="ico" data-ico="hammer"></span><span class="lbl">装修</span></button>
   <button class="tbtn side panel" id="btnShop"><span class="nb">NEW</span><span class="ico" data-ico="cart"></span><span class="lbl">商店</span></button>
+  <button class="tbtn panel" id="btnGame"><span class="ico" data-ico="game"></span><span class="lbl">小游戏</span></button>
+  <button class="tbtn panel" id="btnChat"><span class="ico" data-ico="chat"></span><span class="lbl">聊天</span></button>
   <button class="tbtn panel" id="btnDone"><span class="ico" data-ico="check"></span><span class="lbl">完成</span></button>
   <div class="hint panel" id="hint">拖动家具或小昼摆放 · 点一下家具可翻转/旋转</div>
 
@@ -149,13 +151,6 @@
         <img id="dressPet" src="xiaozhou.png" alt="小昼">
         <div id="dressAcc"></div>
       </div>
-      <div id="dressHint">点下面的饰品给小昼戴上 · 拖动摆位置，选中可缩放/镜像/收回</div>
-      <div id="dressBar">
-        <button class="db" data-dress="big">放大</button>
-        <button class="db" data-dress="small">缩小</button>
-        <button class="db" data-dress="flip">镜像</button>
-        <button class="db del" data-dress="del">收回</button>
-      </div>
     </div>
     <div id="closetCats"></div>
     <div id="closetItems"></div>
@@ -173,10 +168,6 @@
       <div class="mecard" id="meCare"></div>
 
       <div class="mecard" id="meAchv"></div>
-
-      <button class="mebtn" id="openGame"><span>🎮 接爱心小游戏</span><span class="mearw">›</span></button>
-
-      <button class="mebtn" id="openChat"><span>💬 和小昼聊天</span><span class="mearw">›</span></button>
 
       <div class="mecard">
         <div class="mesec">小昼的日记 · AI</div>
@@ -244,6 +235,6 @@
     <div class="n" data-nav="me"><span class="ico" data-ico="person"></span>我的</div>
   </div>
 </div>
-<script src="game.js?v=33"></script>
+<script src="game.js?v=36"></script>
 </body>
 </html>

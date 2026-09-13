@@ -94,13 +94,15 @@ svg{display:block;shape-rendering:crispEdges;}
 #growth:active{transform:scale(.96);}
 
 /* 右侧按钮：装修 / 完成 / 商店 */
-#btnEdit,#btnDone,#btnShop{position:absolute;right:12px;z-index:11;width:54px;height:54px;
+#btnEdit,#btnDone,#btnShop,#btnGame,#btnChat{position:absolute;right:12px;z-index:11;width:54px;height:54px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;}
 #btnEdit,#btnDone{top:66px;}
-#btnShop{top:130px;}
+#btnShop{top:126px;}
+#btnGame{top:186px;}
+#btnChat{top:246px;}
 #btnDone{display:none;}
 #btnShop .nb{position:absolute;top:-6px;right:-5px;background:#f0803a;color:#fff;font-size:8px;font-weight:600;padding:1px 5px;border-radius:999px;box-shadow:0 2px 5px rgba(190,90,30,.4);}
-#btnEdit:active,#btnDone:active,#btnShop:active{transform:scale(.95);}
+#btnEdit:active,#btnDone:active,#btnShop:active,#btnGame:active,#btnChat:active{transform:scale(.95);}
 
 /* 灯家具：点一下开关；点亮时发光晕 */
 .furn.lightfx{cursor:pointer;}
@@ -228,16 +230,25 @@ svg{display:block;shape-rendering:crispEdges;}
 #dressPet{display:block;width:100%;image-rendering:pixelated;filter:drop-shadow(0 4px 4px rgba(70,50,30,.25));}
 #dressAcc{position:absolute;inset:0;}
 .wornEdit{position:absolute;cursor:grab;touch-action:none;}
-.wornEdit svg{display:block;width:100%;height:auto;image-rendering:pixelated;pointer-events:none;}
-.wornEdit.sel{outline:2px dashed #e0885a;outline-offset:3px;border-radius:4px;}
-#dressHint{position:absolute;left:0;right:0;top:8px;text-align:center;font-size:11px;color:#7a5a3a;
-  background:rgba(255,250,243,.72);padding:4px 0;z-index:5;pointer-events:none;}
-#dressBar{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);z-index:6;display:none;gap:6px;}
-#dressBar.show{display:flex;}
-#dressBar .db{font-size:12px;font-weight:600;color:#7a4f2e;background:rgba(255,250,243,.92);border:1px solid rgba(180,150,110,.4);
-  border-radius:999px;padding:6px 13px;cursor:pointer;box-shadow:0 3px 8px rgba(90,60,38,.18);}
-#dressBar .db:active{transform:scale(.94);}
-#dressBar .db.del{color:#c0503a;}
+.wornEdit .wg{width:100%;transform-origin:center;}
+.wornEdit .wg svg{display:block;width:100%;height:auto;image-rendering:pixelated;pointer-events:none;}
+.wornEdit.sel{outline:2px dashed #e0885a;outline-offset:4px;border-radius:3px;}
+/* 四角操作手柄（选中时显示）*/
+.wornEdit .wh{position:absolute;width:24px;height:24px;border-radius:50%;display:none;
+  align-items:center;justify-content:center;font-size:13px;line-height:1;color:#7a4f2e;
+  background:rgba(255,250,243,.96);border:1px solid rgba(180,150,110,.5);box-shadow:0 2px 6px rgba(90,60,38,.28);
+  z-index:6;touch-action:none;}
+.wornEdit.sel .wh{display:flex;}
+.wornEdit .wh.tl{left:-12px;top:-12px;}
+.wornEdit .wh.tr{right:-12px;top:-12px;color:#c0503a;}
+.wornEdit .wh.bl{left:-12px;bottom:-12px;cursor:grab;}
+.wornEdit .wh.br{right:-12px;bottom:-12px;cursor:nwse-resize;}
+.wornEdit .wh:active{transform:scale(.9);}
+/* 饰品格子右上角小标记：＋=点戴上，✓=已戴 */
+.citem .cmark{position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1;
+  color:#fff;background:#e0a866;box-shadow:0 1px 3px rgba(120,80,40,.3);}
+.citem .cmark.on{background:#7cc267;}
 /* 首页小昼身上的饰品叠层 */
 #petAcc .wornItem{position:absolute;}
 #petAcc .wornItem svg{display:block;width:100%;height:auto;image-rendering:pixelated;}

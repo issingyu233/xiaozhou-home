@@ -17,9 +17,11 @@ const ICONS = {
   cal:{p:{R:'#e0557a',W:'#fff',D:'#8a6a4a'},g:['R.R','WWW','WDW','WWW','WDW']},
   hanger:{p:{D:'#8a6a4a'},g:['..D..','.D.D.','D...D','DDDDD','.....']},
   book:{p:{B:'#b57a42',W:'#fff3d8',R:'#d76a5a'},g:['BWWWB','BWWWB','BWRWB','BWWWB','BBBBB']},
-  person:{p:{B:'#7a5ec8',H:'#f6dcd2'},g:['.HH.','.HH.','BBBB','BBBB','B..B']},
+  person:{p:{B:'#b57a42',H:'#f6dcd2'},g:['.HH.','.HH.','BBBB','BBBB','B..B']},
   arwL:{p:{D:'#7a5a3a'},g:['..D','.D.','D..','.D.','..D']},
   arwR:{p:{D:'#7a5a3a'},g:['D..','.D.','..D','.D.','D..']},
+  game:{p:{D:'#7a4f2e',Y:'#f2c94a',W:'#ffe9a8'},g:['.....','DDDDD','DYWYD','DDDDD','.D.D.']},
+  chat:{p:{B:'#e0885a',W:'#fff7ea'},g:['BBBBB','BWWWB','BWWWB','BBBBB','.B...']},
 };
 function svgIcon(name,px){
   const ic=ICONS[name]; if(!ic) return '';
@@ -236,6 +238,7 @@ if(!S.worn){
     S.worn.push({key:S.outfit, x:0.5, y:(a.top||6)/100+0.02, w:(a.size||34)/96, flip:0});
   }
 }
+S.worn.forEach(it=>{ if(it.rot==null) it.rot=0; });   // 旋转角度（度）
 if(!S.ai) S.ai={key:'',model:'deepseek-chat',enabled:false,auto:true};  // 小昼AI设置（key只存本地）
 if(!S.chat) S.chat=[];           // 与小昼的聊天记录 [{r:'me'|'xz',t:''}]
 if(!S.zdiary) S.zdiary={};        // 小昼自己写的日记 { 'YYYY-MM-DD': '...' }
@@ -443,6 +446,8 @@ function setEdit(on){
   document.getElementById('btnEdit').style.display=on?'none':'flex';
   document.getElementById('btnDone').style.display=on?'flex':'none';
   document.getElementById('btnShop').style.display=on?'none':'flex';
+  document.getElementById('btnGame').style.display=on?'none':'flex';
+  document.getElementById('btnChat').style.display=on?'none':'flex';
   document.getElementById('roomsel').style.display=on?'none':'flex';
   document.getElementById('nav').style.display=on?'none':'flex';
   document.getElementById('needs').style.display=on?'none':'flex';
@@ -509,32 +514,58 @@ function dressBedroomBg(){
 }
 function applyWornEl(el,it){
   el.style.left=(it.x*100)+'%'; el.style.top=(it.y*100)+'%'; el.style.width=(it.w*100)+'%';
-  el.style.transform='translate(-50%,-50%)'+(it.flip?' scaleX(-1)':'');
+  el.style.transform='translate(-50%,-50%)';
+  const wg=el.querySelector('.wg');
+  if(wg) wg.style.transform='rotate('+(it.rot||0)+'deg)'+(it.flip?' scaleX(-1)':'');
 }
 function selectWorn(i){ selWorn=i;
   document.querySelectorAll('#dressAcc .wornEdit').forEach((e,idx)=>e.classList.toggle('sel',idx===i));
-  const bar=document.getElementById('dressBar'); if(bar) bar.classList.toggle('show', i>=0);
 }
 function renderDress(){
   dressBedroomBg();
   const box=document.getElementById('dressAcc'); if(!box) return; box.innerHTML='';
   (S.worn||[]).forEach((it,idx)=>{
-    const el=document.createElement('div'); el.className='wornEdit'; el.innerHTML=accSvgFill(it.key);
+    const el=document.createElement('div'); el.className='wornEdit';
+    el.innerHTML='<div class="wg">'+accSvgFill(it.key)+'</div>'
+      +'<div class="wh tl" data-h="flip">⇋</div>'
+      +'<div class="wh tr" data-h="del">✕</div>'
+      +'<div class="wh bl" data-h="rot">↻</div>'
+      +'<div class="wh br" data-h="scale">⤢</div>';
     applyWornEl(el,it);
+    // 拖动整体移动
     let dragging=false,sx=0,sy=0,ox=0,oy=0,r=null;
-    el.addEventListener('pointerdown',ev=>{ ev.stopPropagation(); selectWorn(idx); dragging=true;
-      try{el.setPointerCapture(ev.pointerId);}catch(e){} r=box.getBoundingClientRect(); sx=ev.clientX; sy=ev.clientY; ox=it.x; oy=it.y; });
+    el.addEventListener('pointerdown',ev=>{ if(ev.target.classList.contains('wh')) return; ev.stopPropagation(); selectWorn(idx);
+      dragging=true; try{el.setPointerCapture(ev.pointerId);}catch(e){} r=box.getBoundingClientRect(); sx=ev.clientX; sy=ev.clientY; ox=it.x; oy=it.y; });
     el.addEventListener('pointermove',ev=>{ if(!dragging||!r) return;
       it.x=Math.max(0,Math.min(1,ox+(ev.clientX-sx)/r.width));
       it.y=Math.max(0,Math.min(1,oy+(ev.clientY-sy)/r.height)); applyWornEl(el,it); });
     el.addEventListener('pointerup',()=>{ if(dragging){ dragging=false; save(); renderOutfit(); } });
+    // 四角手柄
+    el.querySelectorAll('.wh').forEach(h=>{
+      const kind=h.dataset.h;
+      h.addEventListener('pointerdown',ev=>{ ev.stopPropagation(); selectWorn(idx);
+        try{h.setPointerCapture(ev.pointerId);}catch(e){}
+        if(kind==='flip'){ it.flip=it.flip?0:1; applyWornEl(el,it); save(); renderOutfit(); return; }
+        if(kind==='del'){ S.worn.splice(idx,1); selWorn=-1; save(); renderOutfit(); renderDress(); return; }
+        // rot / scale 需要拖动：记录中心和起始
+        const er=el.getBoundingClientRect(); const cx=er.left+er.width/2, cy=er.top+er.height/2;
+        const baseR=box.getBoundingClientRect();
+        h._act={kind, cx, cy, startAng:Math.atan2(ev.clientY-cy,ev.clientX-cx), startRot:it.rot||0,
+                startDist:Math.hypot(ev.clientX-cx,ev.clientY-cy), startW:it.w, boxW:baseR.width}; });
+      h.addEventListener('pointermove',ev=>{ const a=h._act; if(!a) return;
+        if(a.kind==='rot'){ const ang=Math.atan2(ev.clientY-a.cy,ev.clientX-a.cx);
+          it.rot=Math.round((a.startRot+(ang-a.startAng)*180/Math.PI)); applyWornEl(el,it); }
+        else if(a.kind==='scale'){ const d=Math.hypot(ev.clientX-a.cx,ev.clientY-a.cy);
+          let nw=a.startW*(d/(a.startDist||1)); nw=Math.max(0.05,Math.min(1.8,nw)); it.w=nw; applyWornEl(el,it); } });
+      h.addEventListener('pointerup',()=>{ if(h._act){ h._act=null; save(); renderOutfit(); } });
+    });
     box.appendChild(el);
   });
   selectWorn(selWorn>=0 && selWorn<(S.worn||[]).length ? selWorn : -1);
 }
 function addWorn(key){
   const a=ACCMAP[key]; if(!a||!a.g) return;
-  S.worn.push({key, x:0.5, y:(a.top||6)/100+0.04, w:(a.size||34)/96, flip:0});
+  S.worn.push({key, x:0.5, y:(a.top||6)/100+0.04, w:(a.size||34)/96, flip:0, rot:0});
   if(!S.stats.outfits.includes(key)) S.stats.outfits.push(key);
   selWorn=S.worn.length-1; save(); renderOutfit(); renderDress(); checkAchv();
 }
@@ -560,7 +591,8 @@ function renderCloset(){
     let badge='';
     if(locked) badge='<div class="cprice"><span class="ci">'+svgIcon('gem',11)+'</span>'+a.gem+'</div>';
     else if(a.gem) badge='<div class="cprice got">限定</div>';
-    it.innerHTML='<div class="cpic">'+(a.g?accSvg(a.key,Math.min(a.size,34)):'<span class="cnone">∅</span>')+'</div><div class="cnm">'+a.name+'</div>'+badge;
+    const mark = a.key==='none' ? '' : '<span class="cmark'+(wornNow?' on':'')+'">'+(wornNow?'✓':'+')+'</span>';
+    it.innerHTML='<div class="cpic">'+(a.g?accSvg(a.key,Math.min(a.size,34)):'<span class="cnone">∅</span>')+'</div><div class="cnm">'+a.name+'</div>'+badge+mark;
     it.onclick=()=>{
       if(a.key==='none'){ S.worn=[]; selWorn=-1; save(); renderOutfit(); renderCloset(); return; }
       if(locked){ if((S.gems||0) < a.gem){ bubble('钻石不够啦~ 攒够'+a.gem+'颗再来~'); return; }
@@ -569,20 +601,10 @@ function renderCloset(){
     };
     box.appendChild(it); });
 }
-// 换装画布：空白处点一下取消选中；工具条按钮
+// 换装画布：空白处点一下取消选中
 (function(){
   const area=document.getElementById('dressArea');
-  if(area) area.addEventListener('pointerdown',e=>{ if(e.target.closest('.wornEdit')||e.target.closest('#dressBar')) return; selectWorn(-1); });
-  const bar=document.getElementById('dressBar');
-  if(bar) bar.querySelectorAll('.db').forEach(btn=>{ btn.onclick=()=>{
-    if(selWorn<0||selWorn>=S.worn.length) return; const it=S.worn[selWorn]; const act=btn.dataset.dress;
-    if(act==='big') it.w=Math.min(1.6, it.w*1.15);
-    else if(act==='small') it.w=Math.max(0.05, it.w/1.15);
-    else if(act==='flip') it.flip=it.flip?0:1;
-    else if(act==='del'){ S.worn.splice(selWorn,1); selWorn=-1; save(); renderOutfit(); renderDress(); return; }
-    const el=document.querySelectorAll('#dressAcc .wornEdit')[selWorn]; if(el) applyWornEl(el,it);
-    save(); renderOutfit();
-  }; });
+  if(area) area.addEventListener('pointerdown',e=>{ if(e.target.closest('.wornEdit')) return; selectWorn(-1); });
 })();
 document.getElementById('closetClose').onclick=()=>{ closeCloset(); setNav('home'); };
 
@@ -807,7 +829,7 @@ document.getElementById('aiTest').onclick=async()=>{
 
 /* ========== 聊天 ========== */
 const chatPage=document.getElementById('chat');
-function openChat(){ chatPage.style.display='flex'; renderChat(); }
+function openChat(){ if(edit) setEdit(false); closeMe(); closeMood(); closeCloset(); if(typeof closeGame==='function') closeGame(); chatPage.style.display='flex'; renderChat(); }
 function closeChat(){ if(chatPage) chatPage.style.display='none'; }
 function renderChat(thinking){
   const log=document.getElementById('chatLog'); log.innerHTML='';
@@ -816,8 +838,8 @@ function renderChat(thinking){
   if(thinking){ const el=document.createElement('div'); el.className='cmsg xz think'; el.textContent='小昼在想…'; log.appendChild(el); }
   log.scrollTop=log.scrollHeight;
 }
-document.getElementById('openChat').onclick=()=>{ closeMe(); openChat(); };
-document.getElementById('chatClose').onclick=()=>{ closeChat(); openMe(); };
+document.getElementById('btnChat').onclick=()=>openChat();
+document.getElementById('chatClose').onclick=()=>{ closeChat(); setNav('home'); };
 function doSend(){ const inp=document.getElementById('chatIn'); const t=inp.value.trim(); if(!t) return;
   inp.value=''; const btn=document.getElementById('chatSend'); btn.classList.add('busy');
   xzhouChatSend(t).finally(()=>btn.classList.remove('busy')); }
@@ -842,7 +864,7 @@ function updateGameHud(){
   document.getElementById('gPlays').textContent=gPlaysLeft();
   const gc=document.getElementById('gameCoin'); if(gc) gc.innerHTML=svgIcon('coin',13)+' '+S.coins;
 }
-function openGame(){ closeMe(); gamePage.style.display='flex'; gScore=0; gLeft=GAME_LEN; gItems=[];
+function openGame(){ if(edit) setEdit(false); closeMe(); closeMood(); closeCloset(); closeChat(); gamePage.style.display='flex'; gScore=0; gLeft=GAME_LEN; gItems=[];
   document.getElementById('goverlay').classList.remove('hide');
   document.getElementById('goResult').innerHTML='';
   document.getElementById('goTitle').textContent='接住爱心和金币，躲开炸弹~';
@@ -907,8 +929,8 @@ function gEnd(){
   st.addEventListener('pointermove',e=>{ if(gRun){ move(e.clientX); } });
   st.addEventListener('pointerdown',e=>{ if(gRun){ move(e.clientX); } });
 })();
-document.getElementById('openGame').onclick=()=>openGame();
-document.getElementById('gameClose').onclick=()=>{ closeGame(); openMe(); };
+document.getElementById('btnGame').onclick=()=>openGame();
+document.getElementById('gameClose').onclick=()=>{ closeGame(); setNav('home'); };
 document.getElementById('gStart').onclick=()=>gStart();
 window.addEventListener('resize',()=>{ if(gamePage.style.display==='flex') gFitCanvas(); });
 
@@ -990,8 +1012,8 @@ function renderOutfit(){
   petAcc.style.display='block';
   petAcc.innerHTML = S.worn.map(it=>{
     const a=ACCMAP[it.key]; if(!a||!a.g) return '';
-    const fl = it.flip ? ' scaleX(-1)' : '';
-    return '<span class="wornItem" style="left:'+(it.x*100)+'%;top:'+(it.y*100)+'%;width:'+(it.w*100)+'%;transform:translate(-50%,-50%)'+fl+'">'+accSvgFill(it.key)+'</span>';
+    const tf = 'translate(-50%,-50%) rotate('+(it.rot||0)+'deg)'+(it.flip?' scaleX(-1)':'');
+    return '<span class="wornItem" style="left:'+(it.x*100)+'%;top:'+(it.y*100)+'%;width:'+(it.w*100)+'%;transform:'+tf+'">'+accSvgFill(it.key)+'</span>';
   }).join('');
   syncAcc();
 }
