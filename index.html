@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>夏以昼喂养模拟器</title>
-<link rel="stylesheet" href="style.css?v=36">
+<link rel="stylesheet" href="style.css?v=37">
 </head>
 <body>
 <div id="app">
@@ -59,11 +59,10 @@
     <span class="arw" id="arwR"><span class="ico" data-ico="arwR"></span></span>
   </div>
 
-  <!-- 右侧：装修 / 商店 / 完成 -->
-  <button class="tbtn panel" id="btnEdit"><span class="ico" data-ico="hammer"></span><span class="lbl">装修</span></button>
+  <!-- 右侧：商店 / 衣柜 / 装修 / 完成 -->
   <button class="tbtn side panel" id="btnShop"><span class="nb">NEW</span><span class="ico" data-ico="cart"></span><span class="lbl">商店</span></button>
-  <button class="tbtn panel" id="btnGame"><span class="ico" data-ico="game"></span><span class="lbl">小游戏</span></button>
-  <button class="tbtn panel" id="btnChat"><span class="ico" data-ico="chat"></span><span class="lbl">聊天</span></button>
+  <button class="tbtn panel" id="btnCloset"><span class="ico" data-ico="hanger"></span><span class="lbl">衣柜</span></button>
+  <button class="tbtn panel" id="btnEdit"><span class="ico" data-ico="hammer"></span><span class="lbl">装修</span></button>
   <button class="tbtn panel" id="btnDone"><span class="ico" data-ico="check"></span><span class="lbl">完成</span></button>
   <div class="hint panel" id="hint">拖动家具或小昼摆放 · 点一下家具可翻转/旋转</div>
 
@@ -110,29 +109,35 @@
     </div>
   </div>
 
-  <!-- ===== 日记（心情日历 + 日记本 两个子视图）===== -->
-  <div id="moodpage">
-    <div class="mbox">
-      <div class="mhead">
-        <span class="mtitle">日记</span>
-        <button id="moodClose">✕</button>
+  <!-- ===== 日记（心情日历 + 日记本 + 聊天 三个子视图）===== -->
+  <div id="moodpage" class="fullpage">
+    <div class="fphead">
+      <span class="fptitle">日记</span>
+      <button id="moodClose" class="fpclose">✕</button>
+    </div>
+    <div class="mtabs">
+      <span class="mtab on" data-dtab="cal">心情日历</span>
+      <span class="mtab" data-dtab="list">日记本</span>
+      <span class="mtab" data-dtab="chat">聊天</span>
+    </div>
+    <div id="calView">
+      <div class="mnav">
+        <span class="marw" id="moodPrev"><span class="ico" data-ico="arwL"></span></span>
+        <span class="mmon" id="moodMon">2026 年 8 月</span>
+        <span class="marw" id="moodNext"><span class="ico" data-ico="arwR"></span></span>
       </div>
-      <div class="mtabs">
-        <span class="mtab on" data-dtab="cal">心情日历</span>
-        <span class="mtab" data-dtab="list">日记本</span>
-      </div>
-      <div id="calView">
-        <div class="mnav">
-          <span class="marw" id="moodPrev"><span class="ico" data-ico="arwL"></span></span>
-          <span class="mmon" id="moodMon">2026 年 8 月</span>
-          <span class="marw" id="moodNext"><span class="ico" data-ico="arwR"></span></span>
-        </div>
-        <div class="mweek"><i>一</i><i>二</i><i>三</i><i>四</i><i>五</i><i>六</i><i>日</i></div>
-        <div id="moodGrid"></div>
-        <div id="moodFoot"></div>
-      </div>
-      <div id="listView">
-        <div id="diaryList"></div>
+      <div class="mweek"><i>一</i><i>二</i><i>三</i><i>四</i><i>五</i><i>六</i><i>日</i></div>
+      <div id="moodGrid"></div>
+      <div id="moodFoot"></div>
+    </div>
+    <div id="listView">
+      <div id="diaryList"></div>
+    </div>
+    <div id="chatView">
+      <div id="chatLog"></div>
+      <div id="chatBar">
+        <input id="chatIn" type="text" maxlength="200" placeholder="和小昼说点什么…">
+        <button id="chatSend">发送</button>
       </div>
     </div>
   </div>
@@ -214,27 +219,14 @@
     </div>
   </div>
 
-  <!-- ===== 和小昼聊天 ===== -->
-  <div id="chat" class="fullpage">
-    <div class="fphead">
-      <span class="fptitle">💬 小昼</span>
-      <button id="chatClose" class="fpclose">✕</button>
-    </div>
-    <div id="chatLog"></div>
-    <div id="chatBar">
-      <input id="chatIn" type="text" maxlength="200" placeholder="和小昼说点什么…">
-      <button id="chatSend">发送</button>
-    </div>
-  </div>
-
   <!-- ===== 底部导航 ===== -->
   <div id="nav">
     <div class="n on" data-nav="home"><span class="ico" data-ico="home"></span>家</div>
+    <div class="n" data-nav="game"><span class="ico" data-ico="game"></span>小游戏</div>
     <div class="n" data-nav="mood"><span class="ico" data-ico="book"></span>日记</div>
-    <div class="n" data-nav="closet"><span class="ico" data-ico="hanger"></span>衣柜</div>
     <div class="n" data-nav="me"><span class="ico" data-ico="person"></span>我的</div>
   </div>
 </div>
-<script src="game.js?v=36"></script>
+<script src="game.js?v=37"></script>
 </body>
 </html>

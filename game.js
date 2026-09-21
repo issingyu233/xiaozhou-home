@@ -34,8 +34,11 @@ const NEED_ICON={mood:'heart',food:'apple',clean:'drop',energy:'bolt'};
 function paintIcons(){
   document.querySelectorAll('[data-ico]').forEach(el=>{
     const key=el.dataset.ico; const name=NEED_ICON[key]||key;
-    const big=el.closest('.cbtn')||el.closest('.tbtn');
-    el.innerHTML=svgIcon(name,big?22:14);
+    let px=16;
+    if(el.closest('.cbtn')||el.closest('.tbtn')) px=28;
+    else if(el.closest('#nav')) px=26;
+    else if(el.closest('#roomsel')||el.closest('#growth')) px=16;
+    el.innerHTML=svgIcon(name,px);
   });
 }
 
@@ -446,8 +449,7 @@ function setEdit(on){
   document.getElementById('btnEdit').style.display=on?'none':'flex';
   document.getElementById('btnDone').style.display=on?'flex':'none';
   document.getElementById('btnShop').style.display=on?'none':'flex';
-  document.getElementById('btnGame').style.display=on?'none':'flex';
-  document.getElementById('btnChat').style.display=on?'none':'flex';
+  document.getElementById('btnCloset').style.display=on?'none':'flex';
   document.getElementById('roomsel').style.display=on?'none':'flex';
   document.getElementById('nav').style.display=on?'none':'flex';
   document.getElementById('needs').style.display=on?'none':'flex';
@@ -489,18 +491,18 @@ document.getElementById('arwR').onclick=()=>switchRoom(1);
 function setNav(key){ document.querySelectorAll('#nav .n').forEach(n=>n.classList.toggle('on',n.dataset.nav===key)); }
 document.querySelectorAll('#nav .n').forEach(n=>{ n.onclick=()=>{
   const k=n.dataset.nav;
+  if(k==='game'){ closeMood(); closeCloset(); closeMe(); openGame(); return; }
   if(typeof closeGame==='function') closeGame();
   if(k==='mood'){ openMood(); return; }
   closeMood();
-  if(k==='closet'){ openCloset(); return; }
-  closeCloset();
   if(k==='me'){ openMe(); return; }
-  closeMe(); closeChat();
+  closeMe(); closeCloset();
   setNav('home'); }; });
+document.getElementById('btnCloset').onclick=()=>openCloset();
 
 /* ---------- 衣柜换装 ---------- */
 const closetPage=document.getElementById('closet');
-function openCloset(){ if(edit) setEdit(false); closeMood(); closeMe(); closeChat(); setNav('closet'); closetPage.style.display='flex'; renderCloset(); }
+function openCloset(){ if(edit) setEdit(false); closeMood(); closeMe(); if(typeof closeGame==='function') closeGame(); setNav('home'); closetPage.style.display='flex'; renderCloset(); }
 function closeCloset(){ if(closetPage) closetPage.style.display='none'; }
 let selWorn=-1;   // 当前选中的饰品下标（-1=无）
 // 换装画布背景 = 卧室的墙纸+地板
@@ -743,7 +745,8 @@ function switchDiaryTab(t){ diaryTab=t;
   document.querySelectorAll('.mtab').forEach(x=>x.classList.toggle('on',x.dataset.dtab===t));
   document.getElementById('calView').style.display=(t==='cal')?'':'none';
   document.getElementById('listView').style.display=(t==='list')?'block':'none';
-  if(t==='cal') renderMood(); else renderDiaryList();
+  document.getElementById('chatView').style.display=(t==='chat')?'flex':'none';
+  if(t==='cal') renderMood(); else if(t==='list') renderDiaryList(); else renderChat();
 }
 document.querySelectorAll('.mtab').forEach(x=>x.onclick=()=>switchDiaryTab(x.dataset.dtab));
 function renderDiaryList(){
@@ -827,10 +830,9 @@ document.getElementById('aiTest').onclick=async()=>{
   finally{ Object.assign(S.ai,{key:bak.k,enabled:bak.e,model:bak.m}); }
 };
 
-/* ========== 聊天 ========== */
-const chatPage=document.getElementById('chat');
-function openChat(){ if(edit) setEdit(false); closeMe(); closeMood(); closeCloset(); if(typeof closeGame==='function') closeGame(); chatPage.style.display='flex'; renderChat(); }
-function closeChat(){ if(chatPage) chatPage.style.display='none'; }
+/* ========== 聊天（并入「日记」页的子标签）========== */
+function openChat(){ openMood(); switchDiaryTab('chat'); }
+function closeChat(){ const cv=document.getElementById('chatView'); if(cv) cv.style.display='none'; }
 function renderChat(thinking){
   const log=document.getElementById('chatLog'); log.innerHTML='';
   if(!S.chat.length && !thinking){ const w=document.createElement('div'); w.className='cmsg xz'; w.textContent='妹妹来啦~ 想和我说点什么？'; log.appendChild(w); }
@@ -838,8 +840,6 @@ function renderChat(thinking){
   if(thinking){ const el=document.createElement('div'); el.className='cmsg xz think'; el.textContent='小昼在想…'; log.appendChild(el); }
   log.scrollTop=log.scrollHeight;
 }
-document.getElementById('btnChat').onclick=()=>openChat();
-document.getElementById('chatClose').onclick=()=>{ closeChat(); setNav('home'); };
 function doSend(){ const inp=document.getElementById('chatIn'); const t=inp.value.trim(); if(!t) return;
   inp.value=''; const btn=document.getElementById('chatSend'); btn.classList.add('busy');
   xzhouChatSend(t).finally(()=>btn.classList.remove('busy')); }
@@ -864,7 +864,7 @@ function updateGameHud(){
   document.getElementById('gPlays').textContent=gPlaysLeft();
   const gc=document.getElementById('gameCoin'); if(gc) gc.innerHTML=svgIcon('coin',13)+' '+S.coins;
 }
-function openGame(){ if(edit) setEdit(false); closeMe(); closeMood(); closeCloset(); closeChat(); gamePage.style.display='flex'; gScore=0; gLeft=GAME_LEN; gItems=[];
+function openGame(){ if(edit) setEdit(false); closeMe(); closeMood(); closeCloset(); setNav('game'); gamePage.style.display='flex'; gScore=0; gLeft=GAME_LEN; gItems=[];
   document.getElementById('goverlay').classList.remove('hide');
   document.getElementById('goResult').innerHTML='';
   document.getElementById('goTitle').textContent='接住爱心和金币，躲开炸弹~';
@@ -929,7 +929,6 @@ function gEnd(){
   st.addEventListener('pointermove',e=>{ if(gRun){ move(e.clientX); } });
   st.addEventListener('pointerdown',e=>{ if(gRun){ move(e.clientX); } });
 })();
-document.getElementById('btnGame').onclick=()=>openGame();
 document.getElementById('gameClose').onclick=()=>{ closeGame(); setNav('home'); };
 document.getElementById('gStart').onclick=()=>gStart();
 window.addEventListener('resize',()=>{ if(gamePage.style.display==='flex') gFitCanvas(); });
