@@ -980,6 +980,30 @@ function renderNeeds(){
   const g=document.getElementById('gemN'); if(g) g.textContent=(S.gems||0);
 }
 const CARE_TXT={pet:['嘿嘿~','舒服…','再摸摸'],food:['谢谢~','好吃！','嗯！甜'],clean:['香香的~','搓搓澡','舒服'],energy:['困了…','晚安~','抱抱睡']};
+
+/* ---------- 点小昼：会说不同的话（随心情/时间/连点变化）---------- */
+const TAP_LINES=['妹妹~','嗯？找我玩呀？','怎么啦，是想我了吗？','在的在的，我一直都在。',
+  '被妹妹戳到啦，嘿嘿。','今天也来看我啦，开心~','和你在一起，时间过得好快。',
+  '妹妹的手好暖呀。','别闹啦~ 会害羞的。','诶嘿，又戳我。'];
+const TAP_REPEAT=['哈哈，妹妹今天好黏人呀~','再戳我就要把你抱住咯！','痒痒的啦…不过我喜欢。',
+  '好啦好啦，我知道你最喜欢我了~','这么喜欢戳我呀？那我要多亲亲你了。'];
+const TAP_HAPPY=['心情超好的~ 都是因为你呀。','今天感觉浑身是劲儿！','跟妹妹在一起，怎么会不开心。'];
+const TAP_TIRED=['有点困了…靠一会儿好不好。','困困的…妹妹陪我歇会儿嘛。'];
+const NEED_HINT={food:'肚子有点饿了呢…喂喂我好不好？',clean:'身上有点黏黏的，想洗个香香澡了。',
+  energy:'好困呀…哄哄我睡好不好。',mood:'有点没精神…抱抱我嘛。'};
+let tapCount=0, tapLast=0;
+function xzhouTapLine(){
+  const now=Date.now();
+  tapCount = (now-tapLast<3000) ? tapCount+1 : 1; tapLast=now;
+  if(tapCount>=5) return pick(TAP_REPEAT);
+  // 需求偏低时，有机会撒娇提醒
+  const low=[]; if((S.needs.food||0)<30)low.push('food'); if((S.needs.clean||0)<30)low.push('clean');
+  if((S.needs.energy||0)<30)low.push('energy'); if((S.needs.mood||0)<30)low.push('mood');
+  if(low.length && Math.random()<0.5) return NEED_HINT[pick(low)];
+  if((S.needs.energy||0)<=30 && Math.random()<0.5) return pick(TAP_TIRED);
+  if((S.needs.mood||0)>=80 && Math.random()<0.5) return pick(TAP_HAPPY);
+  return pick(TAP_LINES);
+}
 document.querySelectorAll('[data-care]').forEach(b=>{
   b.onclick=()=>{ if(edit) return;
     const k=b.dataset.care; const map={pet:'mood',food:'food',clean:'clean',energy:'energy'};
@@ -996,7 +1020,7 @@ document.querySelectorAll('[data-care]').forEach(b=>{
   };
 });
 petEl.addEventListener('click',e=>{ if(edit) return; S.needs.mood=Math.min(100,S.needs.mood+4); addIntimacy(1); save(); renderNeeds();
-  if(!checkStageUp()){ bubble('妹妹~'); petHop(); } });
+  if(!checkStageUp()){ bubble(xzhouTapLine()); petHop(); } });
 // 点徽章看看成长进度
 if(growthEl) growthEl.addEventListener('click',()=>{ if(edit) return; const idx=stageIndex(); const next=STAGES[idx+1];
   bubble(next?('陪小昼一起长大~ 距「'+next.name+'」还差 '+Math.max(1,next.min-growthPoints())+' 亲密度'):'小昼已经长成青年啦，谢谢你的陪伴~'); });
@@ -1281,7 +1305,8 @@ function spawnDrop(){
   });
 }
 // 偶尔的自言自语小气泡（不给奖励，纯陪伴感）
-const IDLE_TXT=['在想你呢~','今天也要开开心心的！','要不要一起玩？','嗯…有点想撒娇','窝在家里最舒服啦','咕噜咕噜~肚子叫了','摸摸我嘛~'];
+const IDLE_TXT=['在想你呢~','今天也要开开心心的！','要不要一起玩？','嗯…有点想撒娇','窝在家里最舒服啦','咕噜咕噜~肚子叫了','摸摸我嘛~',
+  '妹妹在忙什么呢？','要不要一起晒晒太阳？','发呆中…诶，你在看我呀？','今天也是想你的一天呢。','小屋被你布置得越来越好看啦。','有你在，真好。'];
 function idleBubble(){ if(homeActive() && (!sayEl.style.opacity || sayEl.style.opacity==='0')){
   bubble(IDLE_TXT[Math.floor(Math.random()*IDLE_TXT.length)]); } }
 // 随机调度：每次触发后用新的随机间隔再排一次
