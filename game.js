@@ -118,6 +118,10 @@ const FLOORS=[
   {id:'stone',img:'floor_stone.png', name:'石板'},
   {id:'blue', img:'floor_blue.png',  name:'蓝瓷砖'},
   {id:'green',img:'floor_green.png', name:'绿瓷砖'},
+  {id:'walnut',img:'floor_walnut.png',name:'胡桃木'},
+  {id:'oak',  img:'floor_oak.png',   name:'蜜橡木'},
+  {id:'pink', img:'floor_pink.png',  name:'粉瓷砖'},
+  {id:'grey', img:'floor_greytile.png',name:'雾灰瓷'},
 ];
 // 墙纸皮肤（每间房可各自切换；前4款是各房间原有默认墙）
 const WALLS=[
@@ -129,6 +133,10 @@ const WALLS=[
   {id:'blush',img:'wall_blush.png', name:'蜜桃'},
   {id:'lilac',img:'wall_lilac.png', name:'藕荷'},
   {id:'honey',img:'wall_honey.png', name:'蜂蜜'},
+  {id:'twilight',img:'wall_twilight.png',name:'暮蓝'},
+  {id:'latte',img:'wall_latte.png', name:'奶咖'},
+  {id:'mint', img:'wall_mint.png',  name:'薄荷'},
+  {id:'rose', img:'wall_rose.png',  name:'灰玫'},
 ];
 const ROOM_WALL_DEF={bedroom:1, living:0, bathroom:2, kitchen:3};
 const CATS=[{key:'furn',name:'家具'},{key:'deco',name:'装饰'},{key:'floor',name:'地板'},{key:'wall',name:'墙纸'}];
