@@ -261,8 +261,55 @@ if(!S.stats.outfits) S.stats.outfits=[];
 if(!S.achv) S.achv=[];   // 已解锁成就 id 列表
 if(!S.ownedAcc) S.ownedAcc=[];   // 已购买的限定饰品 key（钻石购买）
 if(!S.game) S.game={date:'', plays:0, best:0};   // 接爱心小游戏：date=当天, plays=今日已玩局数, best=最高分
+if(!S.sound) S.sound={sfx:true, bgm:false};       // 声音开关：音效 / 轻音乐（都存本地）
 // 限定饰品是否已解锁：无 gem 价格的为免费常驻；有 gem 价格的需购买
 function accOwned(key){ const a=ACCMAP[key]; if(!a) return false; if(!a.gem) return true; return S.ownedAcc.includes(key); }
+
+/* ---------- 声音：WebAudio 现场合成，无需音频文件 ---------- */
+const Snd=(()=>{
+  let ctx=null, master=null, bgmOn=false, bgmTimer=null;
+  function ensure(){ if(ctx) return; try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    ctx=new AC(); master=ctx.createGain(); master.gain.value=0.55; master.connect(ctx.destination); }catch(e){} }
+  function resume(){ try{ if(ctx&&ctx.state==='suspended') ctx.resume(); }catch(e){} }
+  function sfxOn(){ return S.sound&&S.sound.sfx; }
+  function blip(freq,dur,type,vol,slideTo){ if(!ctx) return;
+    const o=ctx.createOscillator(), g=ctx.createGain(); o.type=type||'sine';
+    const t=ctx.currentTime; o.frequency.setValueAtTime(freq,t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol||0.24,t+0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.03); }
+  const seq=(arr,gap)=>arr.forEach((a,i)=>setTimeout(()=>blip.apply(null,a),i*(gap||90)));
+  const SFX={
+    pet:  ()=>blip(520,0.12,'sine',0.20,720),
+    food: ()=>blip(440,0.13,'triangle',0.22,600),
+    clean:()=>blip(720,0.14,'sine',0.20,1020),
+    energy:()=>blip(420,0.22,'sine',0.20,300),
+    coin: ()=>seq([[880,0.08,'square',0.15,1245],[1245,0.12,'square',0.15]],70),
+    open: ()=>blip(600,0.10,'sine',0.16,780),
+    checkin:()=>seq([[659,0.14,'square',0.16],[880,0.16,'square',0.16]],100),
+    achv: ()=>seq([[523,0.16,'triangle',0.18],[659,0.16,'triangle',0.18],[784,0.16,'triangle',0.18],[1047,0.22,'triangle',0.18]],95),
+    up:   ()=>seq([[659,0.14,'sine',0.18],[880,0.14,'sine',0.18],[1175,0.2,'sine',0.18]],95),
+  };
+  function play(name){ ensure(); resume(); if(!sfxOn()||!ctx) return; const fn=SFX[name]; if(fn) fn(); }
+  // 轻音乐：柔和琶音慢循环，音量很低
+  const MEL=[523.25,659.25,783.99,659.25,587.33,783.99,987.77,783.99];
+  function startBgm(){ ensure(); resume(); if(!ctx||bgmOn) return; bgmOn=true; let i=0;
+    const step=()=>{ if(!bgmOn||!ctx) return; const f=MEL[i%MEL.length];
+      const o=ctx.createOscillator(), g=ctx.createGain(); o.type='sine'; const t=ctx.currentTime; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.05,t+0.12);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+1.1);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t+1.2);
+      i++; bgmTimer=setTimeout(step,600); };
+    step(); }
+  function stopBgm(){ bgmOn=false; if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer=null; } }
+  function setBgm(v){ if(v) startBgm(); else stopBgm(); }
+  return { play, startBgm, stopBgm, setBgm, ensure, resume, bgmActive:()=>bgmOn };
+})();
+// 首次触摸/点击后解锁音频（浏览器自动播放限制），并按设置启动轻音乐
+function unlockAudio(){ Snd.ensure(); Snd.resume(); if(S.sound&&S.sound.bgm) Snd.startBgm();
+  document.removeEventListener('pointerdown',unlockAudio); document.removeEventListener('click',unlockAudio); }
+document.addEventListener('pointerdown',unlockAudio); document.addEventListener('click',unlockAudio);
 
 /* ---------- 成长阶段 ---------- */
 // 小昼随亲密度 + 累计陪伴天数成长；同一张贴图，靠缩放表现从幼到长大
@@ -472,7 +519,7 @@ document.getElementById('btnDone').onclick=()=>setEdit(false);
 const shopEl=document.getElementById('shop');
 document.getElementById('btnShop').onclick=()=>openShop();
 document.getElementById('shopClose').onclick=()=>closeShop();
-function openShop(){ renderShop(); shopEl.style.display='flex'; }
+function openShop(){ Snd.play('open'); renderShop(); shopEl.style.display='flex'; }
 function closeShop(){ shopEl.style.display='none'; }
 function shopMsg(t){ const m=document.getElementById('shopmsg'); m.textContent=t; m.style.opacity=1; clearTimeout(shopMsg._t); shopMsg._t=setTimeout(()=>m.style.opacity=0,1600); }
 function renderShop(){
@@ -510,7 +557,7 @@ document.getElementById('btnCloset').onclick=()=>openCloset();
 
 /* ---------- 衣柜换装 ---------- */
 const closetPage=document.getElementById('closet');
-function openCloset(){ if(edit) setEdit(false); closeMood(); closeMe(); if(typeof closeGame==='function') closeGame(); setNav('home'); closetPage.style.display='flex'; renderCloset(); }
+function openCloset(){ if(edit) setEdit(false); closeMood(); closeMe(); if(typeof closeGame==='function') closeGame(); setNav('home'); closetPage.style.display='flex'; Snd.play('open'); renderCloset(); }
 function closeCloset(){ if(closetPage) closetPage.style.display='none'; }
 let selWorn=-1;   // 当前选中的饰品下标（-1=无）
 // 换装画布背景 = 卧室的墙纸+地板
@@ -623,7 +670,7 @@ const moodPage=document.getElementById('moodpage');
 let moodView=null; // {y, m(0-11)}
 function thisMonth(){ const d=new Date(); return {y:d.getFullYear(), m:d.getMonth()}; }
 function openMood(){ if(edit) setEdit(false); closeCloset(); closeMe(); closeChat(); recordTodayMood(); save();
-  moodView=thisMonth(); setNav('mood'); moodPage.style.display='flex'; switchDiaryTab('cal'); }
+  moodView=thisMonth(); setNav('mood'); moodPage.style.display='flex'; Snd.play('open'); switchDiaryTab('cal'); }
 function closeMood(){ closePicker(); moodPage.style.display='none'; }
 document.getElementById('moodClose').onclick=()=>{ closeMood(); setNav('home'); };
 document.getElementById('moodPrev').onclick=()=>{ moodView.m--; if(moodView.m<0){moodView.m=11;moodView.y--;} renderMood(); };
@@ -780,7 +827,7 @@ function renderDiaryList(){
 
 /* ========== 我的页 ========== */
 const mePage=document.getElementById('mepage');
-function openMe(){ if(edit) setEdit(false); closeChat(); setNav('me'); mePage.style.display='flex'; renderMe(); }
+function openMe(){ if(edit) setEdit(false); closeChat(); setNav('me'); mePage.style.display='flex'; Snd.play('open'); renderMe(); }
 function closeMe(){ if(mePage) mePage.style.display='none'; }
 function renderMe(){
   document.getElementById('meStats').innerHTML=
@@ -792,6 +839,9 @@ function renderMe(){
   document.getElementById('aiEnabled').checked=!!S.ai.enabled;
   document.getElementById('aiAuto').checked=!!S.ai.auto;
   document.getElementById('aiStatus').textContent=(S.ai.enabled&&S.ai.key)?'已启用 · 小昼会用 AI 回应你':'未启用 · 现在用本地暖心话兜底';
+  const sx=document.getElementById('sndSfx'), bg=document.getElementById('sndBgm');
+  if(sx){ sx.checked=!!S.sound.sfx; sx.onchange=()=>{ S.sound.sfx=sx.checked; save(); if(sx.checked) Snd.play('open'); }; }
+  if(bg){ bg.checked=!!S.sound.bgm; bg.onchange=()=>{ S.sound.bgm=bg.checked; save(); Snd.setBgm(bg.checked); }; }
   renderCare();
   renderAchv();
 }
@@ -872,7 +922,7 @@ function updateGameHud(){
   document.getElementById('gPlays').textContent=gPlaysLeft();
   const gc=document.getElementById('gameCoin'); if(gc) gc.innerHTML=svgIcon('coin',13)+' '+S.coins;
 }
-function openGame(){ if(edit) setEdit(false); closeMe(); closeMood(); closeCloset(); setNav('game'); gamePage.style.display='flex'; gScore=0; gLeft=GAME_LEN; gItems=[];
+function openGame(){ if(edit) setEdit(false); closeMe(); closeMood(); closeCloset(); setNav('game'); gamePage.style.display='flex'; Snd.play('open'); gScore=0; gLeft=GAME_LEN; gItems=[];
   document.getElementById('goverlay').classList.remove('hide');
   document.getElementById('goResult').innerHTML='';
   document.getElementById('goTitle').textContent='接住爱心和金币，躲开炸弹~';
@@ -1023,12 +1073,51 @@ document.querySelectorAll('[data-care]').forEach(b=>{
     S.coins+=1; addIntimacy(4); recordTodayMood();
     S.stats.care++; if(S.stats[k]!=null) S.stats[k]++; save(); renderNeeds();
     const up=checkStageUp();
-    if(!up){ const t=CARE_TXT[k]; bubble(t[Math.floor(Math.random()*t.length)]); petHop(); }
+    if(!up){ const t=CARE_TXT[k]; bubble(t[Math.floor(Math.random()*t.length)]); petHop(); Snd.play(k); }
     checkAchv();
   };
 });
-petEl.addEventListener('click',e=>{ if(edit) return; S.needs.mood=Math.min(100,S.needs.mood+4); addIntimacy(1); save(); renderNeeds();
-  if(!checkStageUp()){ bubble(xzhouTapLine()); petHop(); } });
+petEl.addEventListener('click',e=>{ if(edit) return; if(liftSuppressClick) return; S.needs.mood=Math.min(100,S.needs.mood+4); addIntimacy(1); save(); renderNeeds();
+  if(!checkStageUp()){ bubble(xzhouTapLine()); petHop(); Snd.play('pet'); } });
+
+/* ---------- 长按把小昼「拎起来」到处放（非装修模式，配饰跟随）---------- */
+let lifting=false, liftMoved=false, liftTimer=0, liftSuppressClick=false;
+const LIFT_UP=['哎呀，被拎起来啦~','诶——要带我去哪儿呀？','悬空啦…抓稳我哦！','嘿嘿，飞起来咯~'];
+const LIFT_DOWN=['落地啦~','到新地方咯！','嗯…这里也不错~','放我下来啦，谢谢妹妹~'];
+petEl.addEventListener('pointerdown',e=>{
+  if(edit) return;                         // 装修模式仍用原有拖拽
+  const sx=e.clientX, sy=e.clientY;
+  const ox=parseInt(petEl.style.left)||0, oy=parseInt(petEl.style.top)||0;
+  lifting=false; liftMoved=false;
+  liftTimer=setTimeout(()=>{                // 按住约 0.32 秒才「拎起」，避免和点触冲突
+    lifting=true; liftSuppressClick=true;
+    try{ petEl.setPointerCapture(e.pointerId); }catch(_){}
+    petEl.classList.add('lifted'); petAcc.classList.add('lifted');
+    Snd.play('pet'); bubble(pick(LIFT_UP));
+  }, 320);
+  const move=ev=>{
+    if(!lifting){ if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>10) clearTimeout(liftTimer); return; }
+    liftMoved=true;
+    let nx=ox+(ev.clientX-sx), ny=oy+(ev.clientY-sy);
+    nx=Math.max(0,Math.min(room.clientWidth-petEl.offsetWidth,nx));
+    ny=Math.max(room.clientHeight*0.05,Math.min(room.clientHeight-petEl.offsetHeight-14,ny));
+    petEl.style.left=nx+'px'; petEl.style.top=ny+'px';
+    positionSay();                          // 内部 syncAcc()：配饰层同步跟随
+  };
+  const up=()=>{
+    clearTimeout(liftTimer);
+    petEl.removeEventListener('pointermove',move); petEl.removeEventListener('pointerup',up); petEl.removeEventListener('pointercancel',up);
+    if(lifting){
+      lifting=false;
+      petEl.classList.remove('lifted'); petAcc.classList.remove('lifted');
+      cur().pet={x:parseInt(petEl.style.left)||ox, y:parseInt(petEl.style.top)||oy};
+      save(); positionSay();
+      if(liftMoved){ petHop(); bubble(pick(LIFT_DOWN)); }
+      setTimeout(()=>{ liftSuppressClick=false; }, 80);   // 抬起后紧接的 click 忽略掉
+    }
+  };
+  petEl.addEventListener('pointermove',move); petEl.addEventListener('pointerup',up); petEl.addEventListener('pointercancel',up);
+});
 // 点徽章看看成长进度
 if(growthEl) growthEl.addEventListener('click',()=>{ if(edit) return; const idx=stageIndex(); const next=STAGES[idx+1];
   bubble(next?('陪小昼一起长大~ 距「'+next.name+'」还差 '+Math.max(1,next.min-growthPoints())+' 亲密度'):'小昼已经长成青年啦，谢谢你的陪伴~'); });
@@ -1104,7 +1193,7 @@ function applyGrowth(){
 function checkStageUp(silent){
   const idx=stageIndex();
   if(idx>(S.stage||0)){ S.stage=idx; save(); applyGrowth();
-    if(!silent){ petHop(); setTimeout(()=>bubble('小昼长大啦，现在是'+STAGES[idx].name+'~'),120); checkAchv(); }
+    if(!silent){ petHop(); setTimeout(()=>bubble('小昼长大啦，现在是'+STAGES[idx].name+'~'),120); Snd.play('up'); checkAchv(); }
     return true;
   }
   S.stage=idx; applyGrowth(); return false;
@@ -1167,7 +1256,7 @@ function doCheckin(){
   addIntimacy(3); S.stats.maxStreak=Math.max(S.stats.maxStreak||0, S.checkin.streak);
   save(); renderNeeds(); renderCheckin();
   bubble(rw.gem?('第'+dayNum+'天！收到钻石礼物，谢谢妹妹~'):('签到成功 +'+rw.coin+'金币~'));
-  petHop(); checkAchv();
+  petHop(); Snd.play('checkin'); checkAchv();
 }
 document.getElementById('checkinBtn').onclick=doCheckin;
 document.getElementById('checkinClose').onclick=closeCheckin;
@@ -1221,7 +1310,7 @@ function nextToast(){
   if(!t){ t=document.createElement('div'); t.id='achvToast'; document.getElementById('app').appendChild(t); }
   t.innerHTML='<span class="atSpr">'+a.spr+'</span><span class="atTxt"><b>成就达成 · '+a.name+'</b>'
     +'<i>'+a.desc+'　+'+ACHV_COIN+'金币'+(a.gem?' +'+a.gem+'钻':'')+'</i></span>';
-  t.classList.add('show');
+  t.classList.add('show'); Snd.play('achv');
   clearTimeout(nextToast._t); nextToast._t=setTimeout(()=>{ t.classList.remove('show');
     setTimeout(nextToast,320); }, 2200);
 }
@@ -1308,7 +1397,7 @@ function spawnDrop(){
     else { S.gems=(S.gems||0)+1; txt='+1'; }
     save(); renderNeeds();
     floatText(x,y-6,txt,d.ico);
-    const hi=DROP_HI[d.t]; bubble(hi[Math.floor(Math.random()*hi.length)]); petHop();
+    const hi=DROP_HI[d.t]; bubble(hi[Math.floor(Math.random()*hi.length)]); petHop(); Snd.play('coin');
     el.remove(); clear();
   });
 }

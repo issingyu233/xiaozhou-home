@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>夏以昼喂养模拟器</title>
-<link rel="stylesheet" href="style.css?v=39">
+<link rel="stylesheet" href="style.css?v=41">
 </head>
 <body>
 <div id="app">
@@ -175,6 +175,12 @@
       <div class="mecard" id="meAchv"></div>
 
       <div class="mecard">
+        <div class="mesec">声音</div>
+        <label class="metog"><input type="checkbox" id="sndSfx"> 音效（点触 · 照料 · 奖励）</label>
+        <label class="metog"><input type="checkbox" id="sndBgm"> 轻音乐（背景循环 · 音量很轻）</label>
+      </div>
+
+      <div class="mecard">
         <div class="mesec">小昼的日记 · AI</div>
         <div class="mehint">填入你自己的 DeepSeek API Key（只存在你这台设备的浏览器里，不会上传、不进代码）。填好后小昼就能以他的口吻回复/写日记、陪你聊天；不填则用本地暖心话兜底。</div>
         <label class="melab">API Key</label>
@@ -227,6 +233,6 @@
     <div class="n" data-nav="me"><span class="ico" data-ico="person"></span>我的</div>
   </div>
 </div>
-<script src="game.js?v=39"></script>
+<script src="game.js?v=41"></script>
 </body>
 </html>
