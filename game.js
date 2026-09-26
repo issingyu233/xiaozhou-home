@@ -720,7 +720,7 @@ function buildPicker(){
     +'<textarea id="pkNote" maxlength="140" placeholder="今天和小昼发生了什么呀…"></textarea>'
     +'<div class="pkbtns"><button id="pkClear">清除这天</button><button id="pkSave">保存</button></div>'
     +'</div>';
-  document.querySelector('.mbox').appendChild(pickEl);
+  document.getElementById('moodpage').appendChild(pickEl);
   const row=pickEl.querySelector('.pkrow');
   MOOD_META.forEach((m,i)=>{ const b=document.createElement('div'); b.className='pkface';
     b.innerHTML=moodFace(i,42)+'<span>'+m.name+'</span>';
@@ -752,6 +752,8 @@ function openPicker(key,label,isToday){
   pickEl.style.display='flex';
 }
 function closePicker(){ if(pickEl) pickEl.style.display='none'; }
+// 直接写「今天」的日记（日记本页的按钮用）
+function writeToday(){ const d=new Date(); openPicker(todayKey(),(d.getMonth()+1)+'月'+d.getDate()+'日',true); }
 
 /* ========== 小昼 AI（DeepSeek，key 只存本地） ========== */
 const XZHOU_SYS='你是"夏以昼"（昵称小昼），一个温柔、体贴、带点宠溺的男生，住在一个像素小屋里，被一直照顾你的"妹妹"用心陪伴着。你说话温暖、口语化、简短自然，像真的在她身边。称呼对方"妹妹"。不要用括号里的动作描写，不要太长，通常2到4句。全程中文。';
@@ -804,11 +806,12 @@ function switchDiaryTab(t){ diaryTab=t;
   if(t==='cal') renderMood(); else if(t==='list') renderDiaryList(); else renderChat();
 }
 document.querySelectorAll('.mtab').forEach(x=>x.onclick=()=>switchDiaryTab(x.dataset.dtab));
+{ const dw=document.getElementById('diaryWrite'); if(dw) dw.onclick=()=>{ Snd.play('open'); writeToday(); }; }
 function renderDiaryList(){
   const box=document.getElementById('diaryList'); box.innerHTML='';
   const keys=new Set([...Object.keys(S.moods),...Object.keys(S.zdiary)]);
   const arr=[...keys].filter(k=>{ const r=S.moods[k]; return (r&&r.note)||S.zdiary[k]; }).sort().reverse();
-  if(!arr.length){ box.innerHTML='<div class="dempty">还没有日记~<br>去「心情日历」点某一天写下今天，<br>小昼就会回应你啦。</div>'; return; }
+  if(!arr.length){ box.innerHTML='<div class="dempty">还没有日记~<br>点上面的「✎ 写今天的日记」，<br>记下今天，小昼就会回应你啦。</div>'; return; }
   arr.forEach(k=>{ const r=S.moods[k]||{}; const d=document.createElement('div'); d.className='dentry';
     let h='<div class="dhd">'+(r.v!=null?moodFace(r.v,24):'')+'<span class="dd">'+fmtDate(k)+'</span></div>';
     if(r.note) h+='<div class="dnote">'+esc(r.note)+'</div>';
